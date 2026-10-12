@@ -1,0 +1,16 @@
+name: car-check
+# 로컬 개발용 PostgreSQL. `pnpm db:up`으로 실행합니다.
+# 호스트 포트 5434: booth-agent(5433)나 맥에 깔린 Postgres(5432)와 겹치지 않게.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: car
+      POSTGRES_PASSWORD: car
+      POSTGRES_DB: car_check
+    ports:
+      - "5434:5432"
+    volumes:
+      - car-check-db:/var/lib/postgresql/data
+volumes:
+  car-check-db:
