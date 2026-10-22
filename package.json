@@ -1,0 +1,16 @@
+{
+  "name": "car-check",
+  "private": true,
+  "description": "중고차 고질병·구매 체크. api(NestJS) + web(Next.js)을 pnpm 워크스페이스로 묶습니다.",
+  "packageManager": "pnpm@10.27.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "preinstall": "node scripts/check-pnpm.mjs",
+    "postinstall": "node scripts/copy-env.mjs",
+    "db:setup": "pnpm --dir api db:up && pnpm --dir api exec prisma migrate deploy && pnpm --dir api db:seed",
+    "dev": "pnpm --recursive --parallel --stream run dev",
+    "test": "pnpm --dir api test"
+  }
+}
