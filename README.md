@@ -18,25 +18,24 @@
 
 ## 실행
 
-준비물: Node 22+, pnpm, Docker Desktop
+준비물: Node 22+, Docker Desktop. **패키지 매니저는 pnpm만 씁니다** (npm·yarn으로 설치하면 안내 메시지와 함께 멈춰요).
 
-### 1. API (터미널 1)
 ```bash
-cd api
-pnpm install
-cp .env.example .env      # 그대로 두면 AI 없이 실행됩니다
-pnpm db:up                # PostgreSQL 컨테이너 (포트 5434)
-pnpm db:migrate           # 테이블 생성
-pnpm db:seed              # 샘플 세대 6개 + 엔진·미션 + 고질병 초안 + 본넷 공통 포인트 (기존 데이터는 지워짐)
-pnpm start:dev            # http://localhost:3200 · API 문서 http://localhost:3200/docs
+corepack enable           # 처음 한 번만. Node에 들어 있는 도구가 package.json에 적힌 pnpm 버전을 자동으로 받아요
+pnpm install              # 저장소 맨 위 폴더에서. api·web을 한 번에 설치하고, .env가 없으면 .env.example을 복사해 둡니다
+pnpm db:setup             # 처음 한 번: PostgreSQL 컨테이너(포트 5434) + 테이블 생성 + 샘플 데이터 (⚠️ 기존 데이터는 지워짐)
+pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 http://localhost:3201 동시 실행
 ```
 
-### 2. 화면 (터미널 2)
-```bash
-cd web
-pnpm install
-pnpm dev                  # http://localhost:3201
-```
+- `corepack`이 없다고 나오면(Node 25 이상) `npm install -g pnpm` 으로 pnpm만 따로 설치하세요.
+- 다음부터는 Docker Desktop을 켜고 `pnpm --dir api db:up` → `pnpm dev`만 하면 됩니다.
+- 하나만 따로 띄우려면 `pnpm --dir api dev` / `pnpm --dir web dev`.
+
+### IntelliJ에서 실행
+
+1. 저장소 맨 위 폴더(`car-check`)를 열면 위쪽 실행 목록에 **전체 실행 (api + web)**, **api**, **web**, **DB 처음 준비 (데이터 초기화)** 가 나옵니다 (`.run/` 폴더).
+2. Settings → Languages & Frameworks → Node.js에서 **Package manager가 pnpm**인지 확인하세요. (`package.json`의 `packageManager` 값을 보고 보통 자동으로 잡힙니다)
+3. 터미널에서 `pnpm install`을 먼저 한 번 실행한 뒤 실행 버튼을 누르세요.
 
 ### AI 설정 (`api/.env`) — 셋 중 하나
 
@@ -71,9 +70,9 @@ pnpm dev                  # http://localhost:3201
 | `CarIssue` | 고질병. 초안(DRAFT) / 검증됨(VERIFIED, 출처 필수) |
 | `InspectionPoint` | 본넷 그림 위 빨간 동그라미. `carModelId`가 없으면 모든 차 공통, 있으면 그 차만(점선). 위치는 그림 기준 % |
 
-스키마를 고치면 `pnpm db:migrate` (마이그레이션 + Prisma Client 재생성)를 실행하세요.
+스키마를 고치면 `api` 폴더에서 `pnpm db:migrate` (마이그레이션 + Prisma Client 재생성)를 실행하세요.
 
-차종 데이터는 `api/prisma/seed-data/`(제조사별 파일)에 있습니다. 파일에 차종을 추가한 뒤 **`pnpm db:add-missing`** 을 실행하면 DB에 없는 것만 추가합니다(기존 데이터 유지). `pnpm db:seed`는 전부 지우고 다시 넣습니다.
+차종 데이터는 `api/prisma/seed-data/`(제조사별 파일)에 있습니다. 파일에 차종을 추가한 뒤 `api` 폴더에서 **`pnpm db:add-missing`** 을 실행하면 DB에 없는 것만 추가합니다(기존 데이터 유지). `pnpm db:seed`는 전부 지우고 다시 넣습니다.
 
 ## API
 
@@ -93,7 +92,7 @@ pnpm dev                  # http://localhost:3201
 
 ## 테스트
 ```bash
-cd api && pnpm test
+pnpm test
 ```
 
 ## 다음 단계 (아이디어)
