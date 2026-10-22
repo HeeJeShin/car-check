@@ -4,10 +4,10 @@ import { CarsService } from "../cars/cars.service";
 import { AiService, linkCar } from "./ai.service";
 
 const models = [
-  { id: 1, name: "투싼", generation: "LM", yearFrom: 2009, yearTo: 2015, aliases: ["투싼ix", "ix35", "tucson"] },
-  { id: 2, name: "투싼", generation: "TL", yearFrom: 2015, yearTo: 2020, aliases: ["올뉴투싼", "tucson"] },
-  { id: 3, name: "K5", generation: "TF", yearFrom: 2010, yearTo: 2015, aliases: ["k5"] },
-  { id: 4, name: "5시리즈", generation: "F10", yearFrom: 2010, yearTo: null, aliases: ["520d"] },
+  { id: 1, maker: "현대", name: "투싼", displayName: "투싼ix", yearFrom: 2009, yearTo: 2015, aliases: ["ix35", "tucson"] },
+  { id: 2, maker: "현대", name: "투싼", displayName: "올 뉴 투싼", yearFrom: 2015, yearTo: 2018, aliases: ["tucson"] },
+  { id: 3, maker: "기아", name: "K5", displayName: "K5 1세대", yearFrom: 2010, yearTo: 2015, aliases: ["k5"] },
+  { id: 4, maker: "BMW", name: "5시리즈", displayName: "5시리즈 F10", yearFrom: 2010, yearTo: null, aliases: ["520d"] },
 ];
 const ids = (linked: { id: number }[]) => linked.map((l) => l.id);
 
@@ -36,7 +36,7 @@ describe("AI 모드", () => {
     const result = await ai.recommend({ purpose: "출퇴근", budgetManwon: 1500 });
     const tucson = result.cars.find((c) => c.name === "투싼");
     expect(ids(tucson!.carModels)).toEqual([1, 2]);
-    expect(tucson!.carModels[0].label).toBe("투싼 LM (2009~2015)");
+    expect(tucson!.carModels[0].label).toBe("투싼ix (2009~2015)");
   });
 });
 

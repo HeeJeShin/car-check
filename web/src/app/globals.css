@@ -1,24 +1,28 @@
 @import "tailwindcss";
 
+/* 중구 디자인 토큰 (화면 기획 캔버스와 같은 값). bg-ground, text-muted, border-line 처럼 씁니다. */
+@theme {
+  --color-ink: #16181d;
+  --color-body: #3f4550;
+  --color-muted: #5b6270;
+  --color-faint: #8a919c;
+  --color-line: #e3e6eb;
+  --color-field: #d4d8df;
+  --color-ground: #f5f6f8;
+  --color-chip: #eef0f3;
+  --color-accent: #1d4ed8;
+  --color-accent-dark: #1e3a8a;
+  --color-accent-soft: #e8eefc;
+  --color-danger: #dc2626;
+  --font-sans: var(--font-plex), system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+}
+
 :root {
-  --background: #f7f7f5;
-  --foreground: #1a1a1a;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #121214;
-    --foreground: #ececec;
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }

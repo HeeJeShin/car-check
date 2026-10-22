@@ -8,8 +8,9 @@
     "start": "node dist/main.js",
     "start:dev": "tsc -p tsconfig.json --watch --preserveWatchOutput & node --watch dist/main.js",
     "db:up": "docker compose up -d",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate dev && prisma generate",
     "db:seed": "TS_NODE_PROJECT=tsconfig.seed.json prisma db seed",
+    "db:add-missing": "TS_NODE_PROJECT=tsconfig.seed.json ts-node prisma/add-missing.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "test": "vitest run"

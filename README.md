@@ -14,7 +14,7 @@
 | 아무것도 모를 때 "무엇부터 알아볼지" | AI | 정답이 하나가 아닌 안내·설명 |
 | 용도·예산별 차종 추천 | AI → DB 연결 | 추천 차종에 DB 고질병 링크를 붙여 줌 |
 
-고질병 데이터는 `초안(DRAFT)`으로 들어가고, 출처를 확인하면 `검증됨(VERIFIED)`으로 바꿉니다. 검증됨은 출처 URL이 있어야만 저장됩니다(서버 규칙). 샘플 데이터는 전부 Claude가 쓴 초안이라 **사실 확인이 필요합니다.**
+고질병 데이터는 `초안(DRAFT)`으로 들어가고, 출처를 확인하면 `검증됨(VERIFIED)`으로 바꿉니다. 검증됨은 출처 URL이 있어야만 저장됩니다(서버 규칙). 샘플 데이터(세대 이름·엔진·미션·고질병·점검 포인트)는 전부 Claude가 쓴 초안이라 **사실 확인이 필요합니다.**
 
 ## 실행
 
@@ -27,7 +27,7 @@ pnpm install
 cp .env.example .env      # 그대로 두면 AI 없이 실행됩니다
 pnpm db:up                # PostgreSQL 컨테이너 (포트 5434)
 pnpm db:migrate           # 테이블 생성
-pnpm db:seed              # 샘플 차종 6개 + 고질병 초안 (기존 데이터는 지워짐)
+pnpm db:seed              # 샘플 세대 6개 + 엔진·미션 + 고질병 초안 + 본넷 공통 포인트 (기존 데이터는 지워짐)
 pnpm start:dev            # http://localhost:3200 · API 문서 http://localhost:3200/docs
 ```
 
@@ -50,29 +50,46 @@ pnpm dev                  # http://localhost:3201
 - 모델은 기본 `gemini-flash-latest`(최신 Flash). 바꾸려면 `GEMINI_MODEL`
 - `.env`를 바꾸면 API 서버를 다시 시작하세요.
 
-## 화면
+## 화면 (기획 캔버스 그대로, 모바일 기준)
 
 | 주소 | 내용 |
 |---|---|
-| `/` | 차종 + 연식 검색. 같은 연식에 세대가 여러 개면(예: 2015 투싼 = LM, TL) 고르게 함 |
-| `/cars/[id]` | 고질병 목록(검증됨 먼저, 심각한 것 먼저) + 살 때 확인할 것 + 공통 점검 |
-| `/guide` | AI: 무엇부터 알아볼지, 용도별 추천 |
-| `/admin` | 차종 추가, 고질병 추가·검증·삭제 |
+| `/` | 사이트 소개: 어려운 점 3가지 → 사용 방법 → 시작 버튼 |
+| `/cars` | 차종 선택: 검색 + 제조사 탭(국산 각각, 수입 묶음) + 차 종류 필터(RV/SUV·세단·경차) → 차 이름 카드(이미지 없이 이름 + 차 종류) |
+| `/generations?maker=&name=` | 세대·연식 선택: "올 뉴 투싼 (2015~2018)"처럼 고르기, 연식 입력으로 좁히기 |
+| `/cars/[id]` | 고질병 리포트: 엔진·미션 요약 → 고질병(검증됨 먼저) → 매장 체크리스트(브라우저에 저장) → 공통 점검 |
+| `/cars/[id]/inspect` | 매장 점검 가이드: 스펙별 주의점(DCT → 저속 꿀렁거림 등) → 본넷 그림 + 빨간 동그라미 → 시운전 순서 |
+| `/guide` | AI: 무엇부터 알아볼지, 용도별 추천 (추천 차종 → 세대 선택으로 연결) |
+| `/admin` | 차종·엔진 추가, 고질병 추가·검증·삭제, 이 차 본넷 점검 포인트 추가 |
+
+## 데이터 구조 (`api/prisma/schema.prisma`)
+
+| 테이블 | 내용 |
+|---|---|
+| `CarModel` | 세대 하나. `name`(투싼) + `displayName`(올 뉴 투싼) + 세대 코드 + 연식 구간 + 차급 + 차 종류(`bodyType`: 세단·SUV·경차·승합) |
+| `Powertrain` | 세대별 엔진·미션 조합 (연료, 미션 종류 AT·DCT·CVT·MT). 미션·연료만 넣으면 주의점이 자동으로 붙음 (`api/src/cars/powertrain-tips.ts`) |
+| `CarIssue` | 고질병. 초안(DRAFT) / 검증됨(VERIFIED, 출처 필수) |
+| `InspectionPoint` | 본넷 그림 위 빨간 동그라미. `carModelId`가 없으면 모든 차 공통, 있으면 그 차만(점선). 위치는 그림 기준 % |
+
+스키마를 고치면 `pnpm db:migrate` (마이그레이션 + Prisma Client 재생성)를 실행하세요.
+
+차종 데이터는 `api/prisma/seed-data/`(제조사별 파일)에 있습니다. 파일에 차종을 추가한 뒤 **`pnpm db:add-missing`** 을 실행하면 DB에 없는 것만 추가합니다(기존 데이터 유지). `pnpm db:seed`는 전부 지우고 다시 넣습니다.
 
 ## API
 
 | Method | Path | 설명 |
 |---|---|---|
-| GET | `/cars` | 차종(세대) 전체 |
-| GET | `/cars/search?q=투싼&year=2015` | 이름·별칭 + 연식으로 세대 찾기 |
-| GET | `/cars/:id` | 차종 + 고질병 + 공통 점검 |
-| POST | `/cars` | 차종 추가 |
-| POST | `/issues` | 고질병 추가 |
-| PATCH | `/issues/:id` | 수정 · 검증 처리 (`{"status":"VERIFIED","sourceUrl":"..."}`) |
-| DELETE | `/issues/:id` | 삭제 |
+| GET | `/cars/models` | 차종 선택 화면용: 차 이름 단위 카드 |
+| GET | `/cars/generations?maker=현대&name=투싼` | 한 차종의 세대들 |
+| GET | `/cars/search?q=투싼&year=2015` | 이름·세대 이름·별칭 + 연식으로 찾기 |
+| GET | `/cars/:id` | 리포트: 세대 + 엔진·미션 + 주의점 + 고질병 + 공통 점검 |
+| GET | `/cars/:id/inspection` | 점검 가이드: 주의점 + 본넷 포인트 + 시운전 순서 |
+| GET | `/cars` | 세대 전체 (관리용) |
+| POST | `/cars` | 세대 + 엔진·미션 추가 |
+| POST · PATCH · DELETE | `/issues`, `/issues/:id` | 고질병 추가·수정·검증(`{"status":"VERIFIED","sourceUrl":"..."}`)·삭제 |
+| POST · DELETE | `/inspection-points`, `/inspection-points/:id` | 본넷 점검 포인트 추가·삭제 |
 | GET | `/ai/status` | AI 모드 (`gemini` / `mock` / `off`) |
-| POST | `/ai/guide` | 무엇부터 알아볼지 |
-| POST | `/ai/recommend` | 용도·예산별 추천 (구조화된 JSON 응답 + DB 차종 연결) |
+| POST | `/ai/guide` · `/ai/recommend` | 무엇부터 알아볼지 · 용도별 추천 |
 
 ## 테스트
 ```bash
