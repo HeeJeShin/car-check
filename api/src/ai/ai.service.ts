@@ -13,7 +13,7 @@ import { GUIDE_SYSTEM, RECOMMEND_SCHEMA, RECOMMEND_SYSTEM } from "./prompts";
 
 export type AiMode = "gemini" | "mock" | "off";
 
-export type LinkedCar = { id: number; label: string };
+export type LinkedCar = { id: number; label: string; maker: string; name: string };
 export type RecommendedCar = { name: string; yearRange: string; why: string; watchOut: string };
 export type RecommendResult = {
   summary: string;
@@ -117,10 +117,10 @@ const normalize = (s: string) => s.toLowerCase().replace(/\s/g, "");
  */
 export function linkCar(
   name: string,
-  models: { id: number; name: string; generation: string; yearFrom: number; yearTo: number | null; aliases: string[] }[],
+  models: { id: number; maker: string; name: string; displayName: string; yearFrom: number; yearTo: number | null; aliases: string[] }[],
 ): LinkedCar[] {
   const target = normalize(name);
   return models
-    .filter((m) => [m.name, ...m.aliases].some((n) => n && target.includes(normalize(n))))
-    .map((m) => ({ id: m.id, label: `${m.name} ${m.generation} (${m.yearFrom}~${m.yearTo ?? "현재"})` }));
+    .filter((m) => [m.name, m.displayName, ...m.aliases].some((n) => n && target.includes(normalize(n))))
+    .map((m) => ({ id: m.id, maker: m.maker, name: m.name, label: `${m.displayName} (${m.yearFrom}~${m.yearTo ?? "현재"})` }));
 }
