@@ -53,7 +53,8 @@ export default defineConfig({
     {
       name: "web",
       // 빌드할 때 /cars를 미리 만들므로 API가 먼저 떠 있어야 합니다(위에서 기다림).
-      command: "pnpm --dir ../web exec next build && pnpm --dir ../web exec next start -p 3291",
+      // 이전 실행의 저장본(데이터 캐시는 다시 빌드해도 남음)을 지우고 시작: DB를 새로 채워 차종 id가 바뀌기 때문
+      command: "node -e \"require('fs').rmSync('../web/.next-e2e',{recursive:true,force:true})\" && pnpm --dir ../web exec next build && pnpm --dir ../web exec next start -p 3291",
       url: WEB_URL,
       env: { NEXT_PUBLIC_API_URL: API_URL, NEXT_DIST_DIR: ".next-e2e" },
       timeout: 240_000,
