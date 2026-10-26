@@ -29,8 +29,10 @@ async function openIoniq5Report(page: Page) {
 const issueCard = (page: Page) => page.locator("div.rounded-\\[14px\\]", { hasText: TITLE }).first();
 
 test("에디터 초안 → 검토 요청 → 관리자 승인 → 사용자 화면에 검증됨", async ({ page }) => {
-  // 0. 리포트를 먼저 한 번 열어 저장(ISR)시켜 둠. 승인 뒤 이 저장본이 지워지지 않으면 3번에서 실패해야 함
+  // 0. 리포트를 먼저 한 번 열어 저장(ISR)시켜 둠. 승인 뒤 이 저장본이 만료되지 않으면 3번에서 실패해야 함
   await openIoniq5Report(page);
+  const reportUrl = page.url();
+  await page.goto(reportUrl); // 주소로 한 번 더 열어 서버 저장본(HIT)이 확실히 생기게
   await expect(page.locator("article", { hasText: TITLE })).toHaveCount(0);
 
   // 1. 에디터: 초안 작성 후 검토 요청. 승인 버튼은 안 보임
@@ -60,8 +62,9 @@ test("에디터 초안 → 검토 요청 → 관리자 승인 → 사용자 화�
   await issueCard(page).getByText(/변경 이력 3건/).click();
   await expect(issueCard(page).getByText("검토 중 → 검증됨")).toBeVisible();
 
-  // 3. 사용자 리포트: 저장돼 있던 화면(ISR)이 지워져 바로 "검증됨"으로 보임
-  await openIoniq5Report(page);
+  // 3. 사용자 리포트: 저장돼 있던 화면(ISR)이 만료돼, 주소를 새로 열면 바로 "검증됨"으로 보임
+  //    (화면 안 링크 이동은 만료 직후 첫 번째만 옛 화면일 수 있어 주소로 엶 → web/src/lib/cached.ts)
+  await page.goto(reportUrl);
   const published = page.locator("article", { hasText: TITLE });
   await expect(published.getByText("검증됨", { exact: true })).toBeVisible();
   await expect(published.getByRole("link", { name: "출처 보기" })).toHaveAttribute("href", "https://www.car.go.kr/e2e-source");
