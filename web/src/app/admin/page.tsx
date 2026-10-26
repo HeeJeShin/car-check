@@ -7,10 +7,10 @@ import { useEffect, useState } from "react";
 import { refreshPublicPages } from "@/app/actions";
 import { AdminLogin } from "@/components/admin-login";
 import { BonnetDiagram } from "@/components/bonnet-diagram";
-import { Card, ErrorText, Loading, SeverityText, StatusBadge, TopBar, fieldCls } from "@/components/ui";
+import { Card, ErrorText, Loading, SeverityText, TopBar, fieldCls } from "@/components/ui";
 import {
-  ApiError, BODY_LABEL, FUEL_LABEL, PARTS, TRANSMISSION_LABEL, api, loginToken, saveLoginToken, yearText,
-  type AuthUser, type CarModel, type CarReport, type Inspection, type Severity,
+  ApiError, BODY_LABEL, FUEL_LABEL, PARTS, STATUS_LABEL, TRANSMISSION_LABEL, api, loginToken, saveLoginToken, yearText,
+  type AdminIssue, type AuthUser, type CarModel, type CarReport, type Inspection, type IssueStatus, type Severity,
 } from "@/lib/api";
 
 const btn = "rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50";
@@ -51,6 +51,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
   const [cars, setCars] = useState<CarModel[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [report, setReport] = useState<CarReport | null>(null);
+  const [issues, setIssues] = useState<AdminIssue[]>([]);
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 저장·삭제 후 이 숫자를 올리면 아래 effect들이 다시 돌아 목록을 새로 불러옵니다.
@@ -69,6 +70,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
   useEffect(() => {
     if (!selectedId) return;
     api<CarReport>(`/cars/${selectedId}`).then(setReport, (err: Error) => setError(err.message));
+    api<AdminIssue[]>(`/issues?carModelId=${selectedId}`).then(setIssues, (err: Error) => setError(err.message));
     api<Inspection>(`/cars/${selectedId}/inspection`).then(setInspection, (err: Error) => setError(err.message));
   }, [selectedId, reloadKey]);
 
@@ -88,10 +90,20 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
     }
   }
 
-  async function verify(issueId: number, currentUrl: string | null) {
-    const sourceUrl = window.prompt("확인한 출처 URL을 넣어주세요 (네이버 카페 글, 리콜 공지 등)", currentUrl ?? "https://");
-    if (!sourceUrl) return;
-    await run(() => api(`/issues/${issueId}`, { method: "PATCH", json: { status: "VERIFIED", sourceUrl } }));
+  // 심사 버튼: 승인은 출처 URL, 반려·검증 취소는 사유를 물어본 뒤 보냅니다. 규칙은 서버가 다시 검사합니다.
+  async function transition(issue: AdminIssue, action: AdminIssue["actions"][number]) {
+    const body: { to: IssueStatus; sourceUrl?: string; reason?: string } = { to: action.to };
+    if (action.needs === "sourceUrl") {
+      const url = window.prompt("확인한 출처 URL을 넣어주세요 (리콜 공지, 정비 기록 등)", issue.sourceUrl ?? "https://");
+      if (!url) return;
+      body.sourceUrl = url;
+    }
+    if (action.needs === "reason") {
+      const reason = window.prompt(`'${action.label}' 사유를 적어주세요 (이력에 남아요)`);
+      if (!reason?.trim()) return;
+      body.reason = reason;
+    }
+    await run(() => api(`/issues/${issue.id}/transition`, { method: "POST", json: body }));
   }
 
   async function remove(path: string, what: string) {
@@ -132,23 +144,26 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">고질병</h2>
-          {report?.issues.map((issue) => (
-            <Card key={issue.id} className="p-4">
+          <p className="text-xs leading-relaxed text-muted">초안 → 검토 요청 → 관리자 승인(검증됨) 또는 반려. 반려된 정보는 사용자 화면에 안 보여요. 검토 중·검증된 정보는 초안으로 되돌린 뒤 고칠 수 있어요.</p>
+          {issues.map((issue) => (
+            <Card key={issue.id} className={`p-4 ${issue.status === "REJECTED" ? "opacity-70" : ""}`}>
               <div className="flex items-center gap-2">
                 <SeverityText severity={issue.severity} />
                 <span className="text-xs text-muted">{issue.part}{issue.engine && ` · ${issue.engine}`}</span>
-                <span className="ml-auto"><StatusBadge status={issue.status} /></span>
+                <span className="ml-auto"><ReviewBadge status={issue.status} /></span>
               </div>
               <p className="mt-2 font-bold">{issue.title}</p>
               <p className="mt-1 text-sm text-body">{issue.description}</p>
               <p className="mt-1 text-sm text-muted">확인법: {issue.checkHow}</p>
               {issue.note && <p className="mt-1 text-xs text-muted">메모: {issue.note}</p>}
-              {isAdmin && (
-                <div className="mt-3 flex gap-2">
-                  {issue.status === "DRAFT" && <button className={subtleBtn} onClick={() => verify(issue.id, issue.sourceUrl)}>검증됨으로</button>}
-                  <button className={subtleBtn} onClick={() => remove(`/issues/${issue.id}`, "고질병")}>삭제</button>
-                </div>
-              )}
+              {issue.sourceUrl && <a href={issue.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 block text-xs text-accent underline">출처</a>}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {issue.actions.map((a) => (
+                  <button key={a.to} className={subtleBtn} onClick={() => transition(issue, a)}>{a.label}</button>
+                ))}
+                {isAdmin && <button className={subtleBtn} onClick={() => remove(`/issues/${issue.id}`, "고질병")}>삭제</button>}
+              </div>
+              <IssueHistoryList history={issue.history} />
             </Card>
           ))}
           {selectedId && <IssueForm carModelId={selectedId} onSubmit={(body) => run(() => api("/issues", { method: "POST", json: body }))} />}
@@ -293,5 +308,38 @@ function CarForm({ onSubmit }: { onSubmit: (body: object) => Promise<boolean> })
         </form>
       </Card>
     </section>
+  );
+}
+
+const REVIEW_BADGE: Record<IssueStatus, string> = {
+  DRAFT: "bg-chip text-body",
+  IN_REVIEW: "bg-[#DBEAFE] text-[#1E40AF]",
+  VERIFIED: "bg-[#DCFCE7] text-[#166534]",
+  REJECTED: "bg-[#FEE2E2] text-[#991B1B]",
+};
+function ReviewBadge({ status }: { status: IssueStatus }) {
+  return <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${REVIEW_BADGE[status]}`}>{STATUS_LABEL[status]}</span>;
+}
+
+const FIELD_LABEL: Record<string, string> = { title: "제목", description: "설명", checkHow: "확인법", severity: "위험도", part: "부위", engine: "엔진", sourceUrl: "출처", note: "메모" };
+
+/** 누가·언제·무엇을·왜 (최신이 위) */
+function IssueHistoryList({ history }: { history: AdminIssue["history"] }) {
+  if (history.length === 0) return null;
+  return (
+    <details className="mt-3 text-xs text-body">
+      <summary className="cursor-pointer text-muted">변경 이력 {history.length}건</summary>
+      <ol className="mt-2 flex flex-col gap-1.5 border-l-2 border-chip pl-3">
+        {history.map((h) => (
+          <li key={h.id}>
+            <span className="text-muted">{new Date(h.createdAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })} · {h.user.name}</span>{" "}
+            {h.action === "CREATED" && "작성"}
+            {h.action === "STATUS_CHANGED" && h.fromStatus && h.toStatus && <strong>{STATUS_LABEL[h.fromStatus]} → {STATUS_LABEL[h.toStatus]}</strong>}
+            {h.action === "UPDATED" && `수정: ${Object.keys(h.changes ?? {}).map((k) => FIELD_LABEL[k] ?? k).join(", ")}`}
+            {h.reason && <span className="block text-[#92400E]">사유: {h.reason}</span>}
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }

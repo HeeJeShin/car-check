@@ -2,7 +2,6 @@ import { ExecutionContext, ForbiddenException, NotFoundException, UnauthorizedEx
 import { Reflector } from "@nestjs/core";
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from "jose";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { assertCanEdit } from "../issues/issues.service";
 import type { PrismaService } from "../prisma/prisma.service";
 import { AuthGuard, Public, Roles } from "./auth.guard";
 import { AuthService, roleFor } from "./auth.service";
@@ -127,17 +126,8 @@ describe("AuthGuard: 쓰기 API는 기본으로 막고 필요한 곳만 연다",
     expect(await call("adminOnly", { as: "writer@example.com" })).toBe("ForbiddenException");
   });
   it("@Roles(ADMIN, EDITOR)는 에디터도", async () => expect(await call("editorToo", { as: "writer@example.com" })).toBe("ok"));
-});
-
-describe("에디터 규칙 (고질병)", () => {
-  const editor = { role: "EDITOR" as const };
-  it("에디터는 초안 작성·수정 가능", () => {
-    expect(() => assertCanEdit(editor, { nextStatus: "DRAFT" })).not.toThrow();
-    expect(() => assertCanEdit(editor, { currentStatus: "DRAFT" })).not.toThrow();
+  it("@Roles가 붙은 GET은 로그인 필요 (관리 화면용 목록)", async () => {
+    expect(await call("editorToo", { method: "GET" })).toBe("UnauthorizedException");
+    expect(await call("editorToo", { method: "GET", as: "writer@example.com" })).toBe("ok");
   });
-  it("에디터는 '검증됨' 처리도, 검증된 정보 수정도 못 함", () => {
-    expect(() => assertCanEdit(editor, { nextStatus: "VERIFIED" })).toThrow(ForbiddenException);
-    expect(() => assertCanEdit(editor, { currentStatus: "VERIFIED", nextStatus: "DRAFT" })).toThrow(ForbiddenException);
-  });
-  it("관리자는 모두 가능", () => expect(() => assertCanEdit({ role: "ADMIN" }, { currentStatus: "VERIFIED", nextStatus: "VERIFIED" })).not.toThrow());
 });

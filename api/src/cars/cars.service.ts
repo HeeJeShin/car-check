@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { PUBLIC_STATUSES } from "../issues/issues.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCarModelDto } from "./dto/create-car-model.dto";
 import { GENERAL_CHECKS } from "./general-checks";
@@ -47,7 +48,7 @@ export class CarsService {
     return this.prisma.carModel.findMany({
       where: { maker, name },
       orderBy: { yearFrom: "desc" },
-      include: { _count: { select: { issues: true } } },
+      include: { _count: { select: { issues: { where: { status: { in: PUBLIC_STATUSES } } } } } },
     });
   }
 
@@ -69,7 +70,7 @@ export class CarsService {
         ],
       },
       orderBy: { yearFrom: "asc" },
-      include: { _count: { select: { issues: true } } },
+      include: { _count: { select: { issues: { where: { status: { in: PUBLIC_STATUSES } } } } } },
     });
   }
 
@@ -77,7 +78,8 @@ export class CarsService {
   async findOne(id: number) {
     const car = await this.prisma.carModel.findUnique({
       where: { id },
-      include: { issues: true, powertrains: { orderBy: { id: "asc" } } },
+      // 반려된 고질병은 사용자 화면에서 숨깁니다(관리 화면은 GET /issues로 전부 봄).
+      include: { issues: { where: { status: { in: PUBLIC_STATUSES } } }, powertrains: { orderBy: { id: "asc" } } },
     });
     if (!car) throw new NotFoundException(`차종 ${id}번을 찾을 수 없습니다.`);
     return {
@@ -131,7 +133,7 @@ export class CarsService {
 const SEVERITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
 
 /** 검증된 것 먼저, 그다음 심각한 것 먼저. 사용자가 "믿을 만하고 중요한 것"부터 보게 합니다. */
-export function sortIssues<T extends { status: "DRAFT" | "VERIFIED"; severity: keyof typeof SEVERITY_ORDER }>(issues: T[]) {
+export function sortIssues<T extends { status: string; severity: keyof typeof SEVERITY_ORDER }>(issues: T[]) {
   return [...issues].sort(
     (a, b) =>
       (a.status === "VERIFIED" ? 0 : 1) - (b.status === "VERIFIED" ? 0 : 1) ||

@@ -4,7 +4,7 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3200";
 
 export type Severity = "LOW" | "MEDIUM" | "HIGH";
-export type IssueStatus = "DRAFT" | "VERIFIED";
+export type IssueStatus = "DRAFT" | "IN_REVIEW" | "VERIFIED" | "REJECTED";
 export type Fuel = "GASOLINE" | "DIESEL" | "LPG" | "HYBRID" | "EV";
 export type Transmission = "AT" | "DCT" | "CVT" | "MT" | "REDUCER";
 export type BodyType = "SEDAN" | "SUV" | "LIGHT" | "VAN";
@@ -41,6 +41,24 @@ export type CarIssue = {
   sourceUrl: string | null;
   note: string | null;
 };
+
+/** 관리 화면용 고질병: 반려 포함 + 변경 이력 + 지금 내가 누를 수 있는 심사 버튼 (GET /issues?carModelId=) */
+export type AdminIssue = CarIssue & {
+  editable: boolean;
+  actions: { to: IssueStatus; label: string; needs: "reason" | "sourceUrl" | null }[];
+  history: {
+    id: number;
+    action: "CREATED" | "UPDATED" | "STATUS_CHANGED";
+    fromStatus: IssueStatus | null;
+    toStatus: IssueStatus | null;
+    reason: string | null;
+    changes: Record<string, [string | null, string | null]> | null;
+    createdAt: string;
+    user: { name: string; email: string };
+  }[];
+};
+
+export const STATUS_LABEL: Record<IssueStatus, string> = { DRAFT: "초안", IN_REVIEW: "검토 중", VERIFIED: "검증됨", REJECTED: "반려" };
 
 export type CarReport = CarModel & {
   powertrains: Powertrain[];

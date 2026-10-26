@@ -1,8 +1,10 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from "@nestjs/swagger";
 import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength } from "class-validator";
 
 export const PARTS = ["엔진", "변속기", "전장", "하체", "차체", "기타"] as const;
+const STATUSES = ["DRAFT", "IN_REVIEW", "VERIFIED", "REJECTED"] as const;
 
+// 새 고질병은 항상 초안(DRAFT)으로 들어갑니다. 상태는 POST /issues/:id/transition으로만 바꿉니다.
 export class CreateIssueDto {
   @ApiProperty({ example: 2 })
   @IsInt()
@@ -41,12 +43,7 @@ export class CreateIssueDto {
   @IsIn(["LOW", "MEDIUM", "HIGH"])
   severity?: "LOW" | "MEDIUM" | "HIGH";
 
-  @ApiPropertyOptional({ enum: ["DRAFT", "VERIFIED"] })
-  @IsOptional()
-  @IsIn(["DRAFT", "VERIFIED"])
-  status?: "DRAFT" | "VERIFIED";
-
-  @ApiPropertyOptional({ example: "https://..." })
+  @ApiPropertyOptional({ example: "https://...", description: "찾아본 출처. 승인할 때 필요합니다." })
   @IsOptional()
   @IsUrl()
   sourceUrl?: string;
@@ -58,5 +55,23 @@ export class CreateIssueDto {
   note?: string;
 }
 
-// PartialType: 모든 필드를 선택(optional)으로 바꾼 DTO. 수정(PATCH)은 바꿀 필드만 보내면 됩니다.
-export class UpdateIssueDto extends PartialType(CreateIssueDto) {}
+// 수정(PATCH)은 바꿀 칸만 보냅니다. 어느 차종인지는 바꿀 수 없습니다.
+export class UpdateIssueDto extends PartialType(OmitType(CreateIssueDto, ["carModelId"] as const)) {}
+
+export class TransitionDto {
+  @ApiProperty({ enum: STATUSES, example: "VERIFIED" })
+  @IsIn(STATUSES)
+  to: (typeof STATUSES)[number];
+
+  @ApiPropertyOptional({ description: "반려·검증 취소 사유 (필수)", example: "출처가 개인 블로그 하나뿐이라 근거 부족" })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  reason?: string;
+
+  @ApiPropertyOptional({ description: "승인할 때 출처. 비우면 이미 저장된 출처를 씁니다.", example: "https://www.car.go.kr/..." })
+  @IsOptional()
+  @IsUrl()
+  sourceUrl?: string;
+}
