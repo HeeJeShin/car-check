@@ -14,7 +14,7 @@
 | 아무것도 모를 때 "무엇부터 알아볼지" | AI | 정답이 하나가 아닌 안내·설명 |
 | 용도·예산별 차종 추천 | AI → DB 연결 | 추천 차종에 DB 고질병 링크를 붙여 줌 |
 
-고질병 데이터는 `초안(DRAFT)`으로 들어가고, 출처를 확인하면 `검증됨(VERIFIED)`으로 바꿉니다. 검증됨은 출처 URL이 있어야만 저장됩니다(서버 규칙). 샘플 데이터(세대 이름·엔진·미션·고질병·점검 포인트)는 전부 Claude가 쓴 초안이라 **사실 확인이 필요합니다.**
+고질병 데이터는 `초안(DRAFT)`으로 들어가고, **검토 요청 → 관리자 승인(검증됨) 또는 반려**를 거칩니다. 승인은 출처 URL이 있어야만 됩니다(서버 규칙). 아래 "고질병 심사 흐름" 참고. 샘플 데이터(세대 이름·엔진·미션·고질병·점검 포인트)는 전부 Claude가 쓴 초안이라 **사실 확인이 필요합니다.**
 
 ## 실행
 
@@ -57,7 +57,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | 역할 | 할 수 있는 것 | 정하는 곳 (`api/.env`) |
 |---|---|---|
 | ADMIN | 모든 수정 + "검증됨" 처리 + 삭제 + 차종 추가 | `ADMIN_EMAILS` |
-| EDITOR | 고질병 초안·점검 포인트 작성, 초안 수정. 검증됨 처리·검증된 정보 수정·삭제는 불가 | `EDITOR_EMAILS` |
+| EDITOR | 고질병 초안·점검 포인트 작성, 초안 수정, 검토 요청. 승인·반려·검증 취소·삭제는 불가 | `EDITOR_EMAILS` |
 | 그 외 구글 계정 | 로그인 거절 | |
 
 - 쓰기 API는 **기본으로 ADMIN만** 열려 있고, 에디터도 되는 곳은 `@Roles("ADMIN", "EDITOR")`, 로그인 없이 되는 곳은 `@Public()`로 표시합니다(`api/src/auth/auth.guard.ts`). 새 API를 만들고 깜빡해도 열려 있지 않아요.
@@ -69,6 +69,20 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 3. 발급된 **클라이언트 ID**를 `api/.env`의 `GOOGLE_CLIENT_ID`에 넣고 API 다시 시작 (클라이언트 보안 비밀번호는 필요 없음)
 
 구글 설정 전에도 `AUTH_DEV_LOGIN=true`면 관리 화면에서 **이메일만으로 로그인**할 수 있어요(개발·테스트용, 운영 환경에서는 항상 꺼짐). 이메일은 `ADMIN_EMAILS`·`EDITOR_EMAILS`에 있어야 합니다.
+
+## 고질병 심사 흐름
+
+```
+초안 ──검토 요청──▶ 검토 중 ──승인(출처 필수, ADMIN)──▶ 검증됨
+ ▲  ◀──요청 취소──     └──반려(사유 필수, ADMIN)──▶ 반려 ──다시 고치기──▶ 초안
+ └────────────────── 검증 취소(사유 필수, ADMIN) ◀── 검증됨
+```
+
+- 허용되는 전이는 `api/src/issues/issue-workflow.ts`의 **표 하나**에만 있고, 표에 없는 전이(초안 → 검증됨 직행 등)는 서버가 거절합니다. 관리 화면 버튼도 이 표로 만들어 서버가 내려줍니다.
+- 내용 수정은 초안·반려 상태에서만. 검토 중·검증된 정보는 초안으로 되돌린 뒤 고칩니다(심사 받은 내용이 몰래 바뀌지 않게).
+- 반려된 정보는 사용자 화면에서 숨깁니다. 검토 중은 "참고"로 보여요.
+- **변경 이력**(`IssueHistory`): 작성·수정·상태 전이마다 누가·언제·무엇을(수정한 칸의 전·후)·왜(사유)를 남깁니다. 변경과 이력은 **하나의 트랜잭션**으로 저장해서 이력 없는 변경이 생기지 않습니다.
+- **동시성**: "지금 상태가 내가 본 상태일 때만 바꾸기"(조건부 업데이트)로, 두 관리자가 동시에 승인해도 한 명만 성공하고 나머지는 409("다른 사람이 먼저 바꿨어요")를 받습니다. 내용 수정도 마지막 수정 시각을 조건에 넣어 남의 수정을 덮어쓰지 않습니다.
 
 ## 화면 (기획 캔버스 그대로, 모바일 기준)
 
@@ -92,7 +106,8 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 |---|---|
 | `CarModel` | 세대 하나. `name`(투싼) + `displayName`(올 뉴 투싼) + 세대 코드 + 연식 구간 + 차급 + 차 종류(`bodyType`: 세단·SUV·경차·승합) |
 | `Powertrain` | 세대별 엔진·미션 조합 (연료, 미션 종류 AT·DCT·CVT·MT). 미션·연료만 넣으면 주의점이 자동으로 붙음 (`api/src/cars/powertrain-tips.ts`) |
-| `CarIssue` | 고질병. 초안(DRAFT) / 검증됨(VERIFIED, 출처 필수) |
+| `CarIssue` | 고질병. 초안(DRAFT) → 검토 중(IN_REVIEW) → 검증됨(VERIFIED, 출처 필수) / 반려(REJECTED) |
+| `IssueHistory` | 고질병 변경 이력: 작성·수정(바뀐 칸 전·후)·상태 전이(사유), 한 사람(User) |
 | `User` | 관리 화면에 로그인한 구글 계정 + 역할(ADMIN·EDITOR) |
 | `InspectionPoint` | 본넷 그림 위 빨간 동그라미. `carModelId`가 없으면 모든 차 공통, 있으면 그 차만(점선). 위치는 그림 기준 % |
 
@@ -112,7 +127,10 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | GET | `/cars` | 세대 전체 (관리용) |
 | GET · POST | `/auth/config`, `/auth/google`, `/auth/dev`, `/auth/me` | 로그인 설정 · 구글 로그인 · 개발용 로그인 · 내 정보 |
 | POST | `/cars` | 세대 + 엔진·미션 추가 🔒ADMIN |
-| POST · PATCH · DELETE | `/issues`, `/issues/:id` | 고질병 추가·수정 🔒ADMIN·EDITOR, 검증(`{"status":"VERIFIED","sourceUrl":"..."}`)·삭제 🔒ADMIN |
+| GET | `/issues?carModelId=2` | 관리 화면: 반려 포함 전부 + 이력 + 내가 누를 수 있는 심사 버튼 🔒ADMIN·EDITOR |
+| POST · PATCH | `/issues`, `/issues/:id` | 고질병 추가(항상 초안)·내용 수정(초안·반려만) 🔒ADMIN·EDITOR |
+| POST | `/issues/:id/transition` | 상태 전이 `{"to":"VERIFIED","sourceUrl":"..."}` / `{"to":"REJECTED","reason":"..."}` 🔒역할은 심사 흐름 표대로 |
+| DELETE | `/issues/:id` | 삭제(이력도 같이 지워짐. 틀린 정보는 반려 권장) 🔒ADMIN |
 | POST · DELETE | `/inspection-points`, `/inspection-points/:id` | 본넷 점검 포인트 추가 🔒ADMIN·EDITOR, 삭제 🔒ADMIN |
 
 🔒 표시는 `Authorization: Bearer <로그인 토큰>`이 필요합니다. API 문서(`/docs`)의 Authorize 버튼에 토큰을 넣으면 바로 시험할 수 있어요.

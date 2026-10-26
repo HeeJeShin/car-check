@@ -81,9 +81,13 @@ model Powertrain {
   @@index([carModelId])
 }
 
+// 고질병 심사 흐름. 허용되는 전이는 src/issues/issue-workflow.ts의 표에만 있습니다.
+//   DRAFT ⇄ IN_REVIEW → VERIFIED / REJECTED,  REJECTED → DRAFT,  VERIFIED → DRAFT(검증 취소)
 enum IssueStatus {
   DRAFT // 초안: 확인 전. 화면에 "참고"로 표시
-  VERIFIED // 검증됨: 직접 출처를 확인함
+  IN_REVIEW // 검토 요청: 작성자가 출처를 붙여 관리자에게 넘김. 화면에는 "참고"로 표시
+  VERIFIED // 검증됨: 관리자가 출처를 확인하고 승인
+  REJECTED // 반려: 사실이 아니거나 근거 부족. 사용자 화면에서 숨김
 }
 
 enum Severity {
@@ -94,8 +98,8 @@ enum Severity {
 
 // 고질병·주의사항 1건 = 행 하나
 model CarIssue {
-  id          Int         @id @default(autoincrement())
-  carModel    CarModel    @relation(fields: [carModelId], references: [id], onDelete: Cascade)
+  id          Int            @id @default(autoincrement())
+  carModel    CarModel       @relation(fields: [carModelId], references: [id], onDelete: Cascade)
   carModelId  Int
   engine      String? // 해당 엔진만 문제일 때 (예: "1.7 디젤"). null = 전 엔진 공통
   part        String // 엔진, 변속기, 전장, 하체, 차체, 기타
@@ -103,14 +107,38 @@ model CarIssue {
   description String
   // 중고차를 살 때 "무엇을 어떻게 확인하라"는 실전 팁. 이 서비스가 주는 핵심 가치.
   checkHow    String
-  severity    Severity    @default(MEDIUM)
-  status      IssueStatus @default(DRAFT)
+  severity    Severity       @default(MEDIUM)
+  status      IssueStatus    @default(DRAFT)
   sourceUrl   String? // 검증할 때 확인한 출처
   note        String? // 출처 메모, 확인할 점 등
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  history     IssueHistory[]
 
   @@index([carModelId])
+}
+
+enum HistoryAction {
+  CREATED // 작성
+  UPDATED // 내용 수정 (changes에 바뀐 칸의 전·후)
+  STATUS_CHANGED // 상태 전이 (fromStatus → toStatus, reason)
+}
+
+// 고질병 변경 이력: 누가·언제·무엇을·왜. 상태 변경과 같은 트랜잭션에서 저장해서, 이력 없는 변경이 생기지 않습니다.
+model IssueHistory {
+  id         Int           @id @default(autoincrement())
+  issue      CarIssue      @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  issueId    Int
+  action     HistoryAction
+  fromStatus IssueStatus?
+  toStatus   IssueStatus?
+  reason     String? // 반려·검증 취소 사유
+  changes    Json? // 내용 수정: { "title": ["전", "후"] }
+  user       User          @relation(fields: [userId], references: [id])
+  userId     Int
+  createdAt  DateTime      @default(now())
+
+  @@index([issueId, createdAt])
 }
 
 // "본넷 열고 볼 곳" 그림 위의 빨간 동그라미 하나.
@@ -142,11 +170,12 @@ enum Role {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
+  id          Int            @id @default(autoincrement())
+  email       String         @unique
   name        String
   picture     String?
   role        Role
-  createdAt   DateTime @default(now())
-  lastLoginAt DateTime @default(now())
+  createdAt   DateTime       @default(now())
+  lastLoginAt DateTime       @default(now())
+  histories   IssueHistory[]
 }

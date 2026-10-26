@@ -21,6 +21,7 @@ export function Card({ children, className = "" }: { children: React.ReactNode; 
   return <div className={`rounded-[14px] border border-line bg-white ${className}`}>{children}</div>;
 }
 
+/** 사용자 화면용: 검증됨 / 그 밖(초안·검토 중)은 "참고". 관리 화면은 상태를 그대로 보여줍니다(ReviewBadge). */
 export function StatusBadge({ status }: { status: IssueStatus }) {
   return status === "VERIFIED" ? (
     <span className="rounded-md bg-[#DCFCE7] px-2 py-0.5 text-xs font-bold text-[#166534]">검증됨</span>
