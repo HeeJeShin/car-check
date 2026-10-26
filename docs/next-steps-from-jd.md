@@ -13,21 +13,27 @@
 | 2 | 심사 흐름 + 변경 이력 | ✅ 완료 | `90ba75b`. 상태 전이 표(`issue-workflow.ts`), `IssueHistory`, 트랜잭션에 더해 **조건부 업데이트로 동시 승인 시 409**까지 넣었습니다. 계획에 없던 "검증 취소", "반려 → 초안"도 추가했습니다. |
 | 3 | AI 응답 스트리밍(SSE) | ⬜ 안 함 | 추천 순서에서 맨 마지막이라 아직 차례가 안 왔습니다. |
 | 4 | E2E + CI | ✅ 완료 | `41fc450`, `56444ef`. Playwright 흐름 4개, GitHub Actions(Postgres 서비스 컨테이너). |
-| 5 | 배포 + 에러 추적 | 🟡 설정만 완료 | `0862e1a`. 계획의 Fly.io·Railway·AWS가 아니라 **Render(API) + Neon(DB) + Vercel(화면)**으로 바꿨습니다. 아래 "계획과 달라진 점" 참고. 실제로 배포했는지, 배포 주소가 있는지는 저장소에 기록이 없습니다. 이력서에 쓰려면 배포 주소를 README에 적어 두세요. |
+| 5 | 배포 + 에러 추적 | 🟡 코드·설정 파일만 완료, **아직 배포 전** | `0862e1a`. 계획의 Fly.io·Railway·AWS가 아니라 **Render(API) + Neon(DB) + Vercel(화면)**으로 바꿨습니다. 아래 "계획과 달라진 점" 참고. `render-env.txt`(비밀값 메모)에는 `ADMIN_EMAILS`만 있고 Neon 주소·구글 Client ID·Sentry DSN·화면 주소는 비어 있습니다. 즉 외부 서비스 계정·프로젝트를 아직 안 만들었습니다. |
 | 6 | 매물 상식 검사 | ⬜ 안 함 | |
 | 7 | 사용 지표 회수 | ⬜ 안 함 | 배포하고 실제 사용자가 생겨야 의미가 있어서 5번 다음입니다. |
 | 8 | 모바일·PWA | ⬜ 안 함 | 화면은 처음부터 모바일 기준으로 만들었지만 PWA(오프라인)·접근성 점검은 없습니다. |
 | 9 | Redis 이전 | ⬜ 안 함 | Render 무료는 서버 1대라 지금은 메모리 저장으로 충분합니다. 서버를 늘릴 이유가 생길 때 하는 게 맞습니다(억지로 넣으면 면접에서 "왜 필요했나"에 답하기 어려움). |
 | 문서 | spec.md · CLAUDE.md | ⬜ 안 함 | 저장소에 둘 다 없습니다. |
 
-지금 이력서에 쓸 수 있는 것: **구글 로그인·역할 권한, 상태 기반 심사 흐름, 트랜잭션·동시성(409), E2E·CI, 배포 설정·Sentry.** "실제 배포"는 배포 주소가 생긴 뒤에 쓰세요.
+지금 이력서에 쓸 수 있는 것: **구글 로그인·역할 권한, 상태 기반 심사 흐름, 트랜잭션·동시성(409), E2E·CI.** 배포·Sentry는 아직 쓰지 마세요. 실제로 올리고 주소가 생긴 뒤에 씁니다.
 
 ### 계획과 달라진 점, 그 이유
 - **Fly.io·Railway·AWS → Render + Neon**: 셋 다 이 프로젝트 규모에 맞는 무료 상시 요금제가 없습니다(Railway는 체험 크레딧만, Fly.io는 카드 등록 필요, AWS는 설정할 게 많고 프리 티어가 끝나면 과금). Render 무료는 15분 쉬면 잠드는 대신, 조회 화면을 Vercel ISR로 미리 만들어 둬서 사용자는 기다리지 않습니다. 리전은 셋 다 싱가포르로 맞췄습니다.
 - **Docker 배포 → Render Blueprint(`render.yaml`)**: Docker는 로컬 DB에만 씁니다. Render가 Node를 직접 빌드하므로 Dockerfile이 필요 없었습니다.
 
 ### 남은 할 일 순서 (추천)
-1. 실제 배포 + README에 주소 적기 (5번 마무리)
+1. 실제 배포 (5번 마무리). README "처음 배포 순서"대로, 빈칸을 채우는 순서는:
+   - Neon 프로젝트 → `DATABASE_URL`(Pooled), `DIRECT_URL`(Direct) → 로컬에서 마이그레이션·시드
+   - Google Cloud Console OAuth 클라이언트 → `GOOGLE_CLIENT_ID` (로컬 `api/.env`에도 넣으면 로컬 구글 로그인도 켜짐)
+   - Sentry 프로젝트 2개 → `SENTRY_DSN`(NestJS), Vercel 쪽 `NEXT_PUBLIC_SENTRY_DSN`(Next.js)
+   - Render Blueprint로 API 생성 → Vercel로 화면 생성 → 그 주소를 `WEB_ORIGIN`과 구글 승인된 원본에 추가
+   - `EDITOR_EMAILS`·`GEMINI_API_KEY`는 비워도 됩니다(에디터 없음 / AI 꺼짐으로 동작)
+   - 끝나면 README에 배포 주소 적기 → 이때부터 이력서에 "실제 배포"
 2. 3번 SSE — 이미 있는 429 제한 화면과 이어짐
 3. 6번 매물 상식 검사 — "계산은 코드, 해석은 AI" 사례
 4. 7번 사용 지표 → 숫자 하나라도 확보
