@@ -134,6 +134,8 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | POST · DELETE | `/inspection-points`, `/inspection-points/:id` | 본넷 점검 포인트 추가 🔒ADMIN·EDITOR, 삭제 🔒ADMIN |
 
 🔒 표시는 `Authorization: Bearer <로그인 토큰>`이 필요합니다. API 문서(`/docs`)의 Authorize 버튼에 토큰을 넣으면 바로 시험할 수 있어요.
+| GET | `/health` | 서버·DB 상태 (배포 헬스체크) |
+| POST | `/health/sentry-test` | Sentry 연결 확인용 일부러 500 에러 🔒ADMIN |
 | GET | `/ai/status` | AI 모드 (`gemini` / `mock` / `off`) |
 | POST | `/ai/guide` · `/ai/recommend` | 무엇부터 알아볼지 · 용도별 추천 |
 
@@ -153,6 +155,29 @@ pnpm test:e2e    # E2E (Playwright): 브라우저로 실제 화면을 눌러봄
 - 실패하면 `pnpm --dir e2e report`로 화면·네트워크 기록(trace)을 볼 수 있어요.
 
 **CI** (`.github/workflows/ci.yml`): PR과 master 푸시마다 GitHub Actions에서 타입 체크·린트·단위 테스트 → E2E 순서로 돌립니다. DB는 Postgres 서비스 컨테이너, 실패하면 Playwright 리포트를 내려받을 수 있어요.
+
+## 배포 (Vercel + Render + Neon) · 에러 수집 (Sentry)
+
+| 무엇 | 어디 | 설정 파일 |
+|---|---|---|
+| 화면 (Next.js) | Vercel (싱가포르) | `web/vercel.json` |
+| API (NestJS) | Render 무료 (싱가포르) | `render.yaml` |
+| DB (PostgreSQL) | Neon 무료 (싱가포르) | |
+| 에러 수집 | Sentry (Next.js·NestJS 프로젝트 2개) | `web/src/instrumentation*.ts`, `api/src/instrument.ts` |
+
+- Render 무료는 15분 동안 요청이 없으면 잠들고 다음 첫 요청이 30초쯤 걸립니다. 조회 화면은 Vercel에 저장된 화면(ISR)을 주므로, API가 자는 동안에도 사용자는 기다리지 않아요(1시간마다 뒤에서 갱신할 때 API를 깨움).
+- Sentry는 DSN이 비어 있으면 꺼져 있습니다. 처리 못 한 에러(500대)만 보내고, 요청 헤더·본문·쿠키·사용자 정보는 보내지 않습니다.
+
+**처음 배포 순서**
+1. **Neon**: 프로젝트 만들기(리전 AWS Singapore) → Connection string 두 개 복사: Pooled(`-pooler`가 들어간 주소)와 Direct.
+2. **DB 채우기** (로컬에서 한 번): `DATABASE_URL="<Direct 주소>" pnpm --dir api exec prisma migrate deploy` → `DATABASE_URL="<Direct 주소>" pnpm --dir api db:seed`
+3. **Sentry**: 조직 만들기 → 프로젝트 2개(Next.js, NestJS) → 각 DSN 복사.
+4. **Render**: New → Blueprint → 이 저장소 → `render.yaml`대로 생성. 비밀값 입력: `DATABASE_URL`(Pooled), `DIRECT_URL`(Direct), `ADMIN_EMAILS`, `GOOGLE_CLIENT_ID`, `SENTRY_DSN`(NestJS), `GEMINI_API_KEY`(선택). `WEB_ORIGIN`은 5번 뒤에 채움.
+5. **Vercel**: Add New → Project → 이 저장소 → **Root Directory `web`** → 환경변수 `NEXT_PUBLIC_API_URL`(Render 주소), `NEXT_PUBLIC_SENTRY_DSN`(Next.js) → Deploy. 빌드 때 `/cars`를 미리 만들므로 Render API가 떠 있어야 합니다(잠들어 있으면 깨우느라 빌드가 조금 느려짐).
+6. **연결 마무리**: Render `WEB_ORIGIN`에 Vercel 주소 → Google Cloud Console의 승인된 JavaScript 원본에 Vercel 주소 추가.
+7. **확인**: `https://<render 주소>/health` → `{"ok":true}`. 관리자 토큰으로 `POST /health/sentry-test`를 부르면 Sentry에 테스트 에러가 들어옵니다.
+
+이후에는 master에 푸시하면 Render·Vercel이 자동으로 다시 배포하고, 새 마이그레이션은 Render가 켜질 때 적용합니다.
 
 ## 다음 단계 (아이디어)
 - 고질병 데이터 채우기·검증하기 (인기 차종부터)

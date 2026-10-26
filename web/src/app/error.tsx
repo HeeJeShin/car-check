@@ -1,11 +1,15 @@
 "use client";
 // 서버에서 화면을 만들다 실패했을 때 (API 서버가 꺼져 있는 경우 등). 미리 만들어 둔 화면이 있으면 그걸 계속 보여주므로,
 // 이 화면은 "처음 만드는 중에" API가 안 될 때만 보입니다.
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { TopBar } from "@/components/ui";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => console.error(error), [error]);
+  useEffect(() => {
+    console.error(error);
+    Sentry.captureException(error);
+  }, [error]);
   return (
     <>
       <TopBar back="/" backLabel="처음으로" />
