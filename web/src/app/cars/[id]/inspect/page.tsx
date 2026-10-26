@@ -1,27 +1,23 @@
-"use client";
 // 4-1. 매장 점검 가이드 (기획 캔버스 "4-1. 매장 점검 가이드")
 // ① 이 차 스펙 → 그래서 조심할 것  ② 본넷 그림 + 빨간 동그라미  ③ 시운전 순서
+// 서버 컴포넌트: 세대마다 화면을 처음 방문 때 만들어 두고 재사용합니다(ISR). 본넷 그림 선택만 브라우저에서 동작.
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { BonnetDiagram } from "@/components/bonnet-diagram";
-import { Card, ErrorText, Loading, TopBar, primaryBtn } from "@/components/ui";
-import { TRANSMISSION_LABEL, api, yearText, type Inspection } from "@/lib/api";
+import { BonnetPoints } from "@/components/bonnet-points";
+import { Card, TopBar, primaryBtn } from "@/components/ui";
+import { TRANSMISSION_LABEL, yearText, type Inspection } from "@/lib/api";
+import { cachedApi } from "@/lib/cached";
 
-export default function InspectPage() {
-  const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<Inspection | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState(1);
+export const revalidate = 3600;
 
-  useEffect(() => {
-    api<Inspection>(`/cars/${id}/inspection`).then(setData, (err: Error) => setError(err.message));
-  }, [id]);
+export async function generateStaticParams() {
+  return [];
+}
 
-  const back = `/cars/${id}`;
-  if (error) return <><TopBar back={back} backLabel="리포트로 돌아가기" title="매장 점검 가이드" /><div className="p-5"><ErrorText message={error} /></div></>;
-  if (!data) return <Loading />;
+export default async function InspectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const data = await cachedApi<Inspection>(`/cars/${Number(id) || 0}/inspection`);
   const { car } = data;
+  const back = `/cars/${car.id}`;
 
   return (
     <>
@@ -62,33 +58,7 @@ export default function InspectPage() {
       <section id="bonnet" className="flex scroll-mt-20 flex-col gap-3 p-5">
         <h2 className="text-lg font-bold">본넷 열고 볼 곳</h2>
         <p className="rounded-[10px] bg-[#FEF3C7] px-3 py-2.5 text-[13px] leading-relaxed text-[#92400E]">시동을 끄고 엔진이 식은 뒤에 보세요. 냉각수 캡은 뜨거울 때 절대 열지 마세요.</p>
-        <BonnetDiagram points={data.points} selected={selected} onSelect={setSelected} />
-        <div className="flex flex-col gap-2">
-          {data.points.map((p) => {
-            const on = p.no === selected;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setSelected(p.no)}
-                aria-expanded={on}
-                className={`flex w-full flex-col rounded-[14px] bg-white px-3.5 py-3 text-left ${on ? "border-2 border-danger" : "border border-line"}`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-full text-[13px] font-bold ${on ? "bg-danger text-white" : "border-2 border-danger text-danger"}`}>{p.no}</span>
-                  <span className="text-[15px] font-bold">{p.title}</span>
-                  {p.mine && <span className="rounded-md bg-[#FEE2E2] px-1.5 py-0.5 text-[11px] font-bold text-[#B91C1C]">이 차 포인트</span>}
-                </span>
-                {on && (
-                  <span className="flex flex-col gap-1.5 pt-2.5 pl-[38px]">
-                    <span className="text-sm leading-relaxed text-body"><strong className="text-ink">보는 법</strong> {p.look}</span>
-                    <span className="text-sm leading-relaxed text-[#B91C1C]"><strong>이러면 주의</strong> {p.bad}</span>
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <BonnetPoints points={data.points} />
       </section>
 
       <section id="drive" className="flex scroll-mt-20 flex-col gap-3 px-5 pt-2 pb-5">

@@ -73,6 +73,13 @@ export const FUEL_LABEL: Record<Fuel, string> = { GASOLINE: "가솔린", DIESEL:
 export const BODY_LABEL: Record<BodyType, string> = { SUV: "RV/SUV", SEDAN: "세단", LIGHT: "경차", VAN: "승합" };
 export const TRANSMISSION_LABEL: Record<Transmission, string> = { AT: "자동", DCT: "DCT", CVT: "CVT", MT: "수동", REDUCER: "감속기(전기차)" };
 
+/** API가 실패 응답을 줬을 때. status로 404(없는 차종) 같은 경우를 구분합니다. */
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 /** fetch + 에러 처리. Nest는 에러를 { message: string | string[] } 모양으로 돌려줍니다. */
 export async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   let res: Response;
@@ -83,18 +90,18 @@ export async function api<T>(path: string, init?: RequestInit & { json?: unknown
       body: init?.json !== undefined ? JSON.stringify(init.json) : init?.body,
     });
   } catch {
-    throw new Error(`API 서버(${API_URL})에 연결할 수 없습니다. api 폴더에서 pnpm start:dev를 실행했는지 확인하세요.`);
+    throw new Error(`API 서버(${API_URL})에 연결할 수 없습니다. pnpm dev로 API를 실행했는지 확인하세요.`);
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message = Array.isArray(data.message) ? data.message.join(", ") : data.message;
-    throw new Error(message ?? `요청 실패 (${res.status})`);
+    throw new ApiError(message ?? `요청 실패 (${res.status})`, res.status);
   }
   return data as T;
 }
 
 export const yearText = (c: { yearFrom: number; yearTo: number | null }) => `${c.yearFrom}~${c.yearTo ?? "현재"}`;
 
-/** 세대 선택 화면 주소. 차 이름에 한글·공백이 있어 쿼리스트링으로 넘깁니다. */
-export const generationsHref = (maker: string, name: string) => `/generations?${new URLSearchParams({ maker, name })}`;
+/** 세대 선택 화면 주소. 쿼리스트링(?maker=)이 아니라 경로로 둬야 화면을 미리 만들어 둘(ISR) 수 있습니다. */
+export const generationsHref = (maker: string, name: string) => `/generations/${encodeURIComponent(maker)}/${encodeURIComponent(name)}`;

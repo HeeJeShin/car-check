@@ -1,45 +1,22 @@
-"use client";
 // 4. 고질병 리포트 (기획 캔버스 "4. 고질병 리포트")
 // 스펙 요약 → 매장 점검 가이드 진입 → 고질병 → 매장 체크리스트 → 공통 점검
+// 서버 컴포넌트: 세대마다 화면을 처음 방문 때 만들어 두고 재사용합니다(ISR). 체크리스트만 브라우저에서 동작.
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Card, ChevronRight, ErrorText, Loading, SEVERITY, SeverityText, StatusBadge, TopBar, primaryBtn, secondaryBtn } from "@/components/ui";
-import { FUEL_LABEL, TRANSMISSION_LABEL, api, generationsHref, yearText, type CarReport } from "@/lib/api";
+import { ReportChecklist } from "@/components/report-checklist";
+import { Card, ChevronRight, SEVERITY, SeverityText, StatusBadge, TopBar, primaryBtn, secondaryBtn } from "@/components/ui";
+import { FUEL_LABEL, TRANSMISSION_LABEL, generationsHref, yearText, type CarReport } from "@/lib/api";
+import { cachedApi } from "@/lib/cached";
 
-// 체크 상태는 이 브라우저에만 저장합니다(매장에서 새로고침해도 유지). 저장이 막힌 환경이면 그냥 넘어갑니다.
-const storageKey = (id: string) => `jungu-checks-${id}`;
-function loadChecks(id: string): Record<string, boolean> {
-  try {
-    return JSON.parse(localStorage.getItem(storageKey(id)) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-function saveChecks(id: string, checks: Record<string, boolean>) {
-  try {
-    localStorage.setItem(storageKey(id), JSON.stringify(checks));
-  } catch {}
+export const revalidate = 3600;
+
+// 빌드 때는 미리 만들지 않고(빌드에 API가 필요 없게), 첫 방문 때 만들어 저장합니다.
+export async function generateStaticParams() {
+  return [];
 }
 
-export default function ReportPage() {
-  const { id } = useParams<{ id: string }>();
-  const [car, setCar] = useState<CarReport | null>(null);
-  const [checks, setChecks] = useState<Record<string, boolean>>({});
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api<CarReport>(`/cars/${id}`).then(
-      (data) => {
-        setCar(data);
-        setChecks(loadChecks(id));
-      },
-      (err: Error) => setError(err.message),
-    );
-  }, [id]);
-
-  if (error) return <><TopBar back="/cars" backLabel="차종 다시 고르기" /><div className="p-5"><ErrorText message={error} /></div></>;
-  if (!car) return <Loading />;
+export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const car = await cachedApi<CarReport>(`/cars/${Number(id) || 0}`);
 
   const back = generationsHref(car.maker, car.name);
   const count = (s: keyof typeof SEVERITY) => car.issues.filter((i) => i.severity === s).length;
@@ -55,12 +32,6 @@ export default function ReportPage() {
     "타이어 연식·마모 확인 (네고 근거)",
     "시운전 (저속·고속·급제동)",
   ];
-  const done = checklist.filter((c) => checks[c]).length;
-  const toggle = (label: string) => {
-    const next = { ...checks, [label]: !checks[label] };
-    setChecks(next);
-    saveChecks(id, next);
-  };
 
   return (
     <>
@@ -123,20 +94,7 @@ export default function ReportPage() {
         ))}
       </section>
 
-      <section id="checklist" className="flex scroll-mt-20 flex-col gap-3 px-5 pt-2 pb-5">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-bold">매장에서 체크하기</h2>
-          <span className="text-sm font-bold text-accent">{done} / {checklist.length}</span>
-        </div>
-        <Card className="flex flex-col px-4 py-1">
-          {checklist.map((label) => (
-            <label key={label} className="flex min-h-[52px] cursor-pointer items-center gap-3 border-b border-chip last:border-b-0">
-              <input type="checkbox" checked={!!checks[label]} onChange={() => toggle(label)} className="h-5 w-5 flex-none accent-accent" />
-              <span className={`text-[15px] ${checks[label] ? "text-faint line-through" : "text-ink"}`}>{label}</span>
-            </label>
-          ))}
-        </Card>
-      </section>
+      <ReportChecklist carId={car.id} items={checklist} />
 
       <section id="common" className="flex scroll-mt-20 flex-col gap-2.5 px-5 pt-2 pb-5">
         <h2 className="text-lg font-bold">모든 중고차 공통 점검</h2>

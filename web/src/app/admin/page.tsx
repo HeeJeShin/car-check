@@ -3,6 +3,7 @@
 // 직접 찾아본 정보를 넣는 곳입니다. "검증됨"은 출처 URL이 있어야 저장됩니다(서버 규칙).
 // 다음 단계: 로그인을 붙여 관리자만 들어오게 막기.
 import { useEffect, useState } from "react";
+import { refreshPublicPages } from "@/app/actions";
 import { BonnetDiagram } from "@/components/bonnet-diagram";
 import { Card, ErrorText, SeverityText, StatusBadge, TopBar, fieldCls } from "@/components/ui";
 import { BODY_LABEL, FUEL_LABEL, PARTS, TRANSMISSION_LABEL, api, yearText, type CarModel, type CarReport, type Inspection, type Severity } from "@/lib/api";
@@ -37,10 +38,12 @@ export default function AdminPage() {
   }, [selectedId, reloadKey]);
 
   // 성공하면 목록을 다시 불러오고, 실패하면 서버가 준 이유를 그대로 보여줍니다.
+  // 미리 만들어 둔 조회 화면(ISR)도 지워서, 사용자 화면에 고친 내용이 바로 보이게 합니다.
   async function run(action: () => Promise<unknown>) {
     setError(null);
     try {
       await action();
+      await refreshPublicPages();
       setReloadKey((k) => k + 1);
       return true;
     } catch (err) {
