@@ -1,0 +1,43 @@
+# Render 배포 설정 (Blueprint). Render 대시보드 → New → Blueprint → 이 저장소를 고르면 이 파일대로 API 서버를 만듭니다.
+# DB는 Neon(무료 Postgres)을 씁니다. sync: false 값은 처음 만들 때 대시보드에서 직접 넣습니다(비밀값이라 파일에 안 씀).
+services:
+  - type: web
+    name: car-check-api
+    runtime: node
+    plan: free # 15분 동안 요청이 없으면 잠들고, 다음 첫 요청이 30초쯤 걸림
+    region: singapore # Neon DB(싱가포르)와 같은 곳
+    rootDir: api
+    # NODE_ENV=production이면 개발용 패키지(typescript·prisma CLI)를 안 깔아서 --prod=false
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build
+    # 켤 때마다 아직 안 한 마이그레이션을 적용한 뒤 시작 (이미 적용된 건 건너뜀)
+    startCommand: pnpm exec prisma migrate deploy && node dist/main.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production # 개발용 이메일 로그인이 항상 꺼짐
+      - key: TRUST_PROXY
+        value: "1" # Render 프록시 뒤라 실제 사용자 IP로 AI 요청 제한
+      - key: DATABASE_URL
+        sync: false # Neon "Pooled connection" 주소
+      - key: DIRECT_URL
+        sync: false # Neon 직접 연결 주소 (마이그레이션용)
+      - key: WEB_ORIGIN
+        sync: false # Vercel 화면 주소, 예: https://car-check.vercel.app
+      - key: AUTH_JWT_SECRET
+        generateValue: true # Render가 무작위로 만들어 줌
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: EDITOR_EMAILS
+        sync: false
+      - key: USE_MOCK_AI
+        value: "false"
+      - key: GEMINI_API_KEY
+        sync: false # 비우면 AI 기능만 꺼짐
+      - key: SENTRY_DSN
+        sync: false # Sentry NestJS 프로젝트의 DSN
+      - key: SENTRY_ENVIRONMENT
+        value: production
