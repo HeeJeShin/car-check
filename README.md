@@ -48,6 +48,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 - 키 발급: [Google AI Studio](https://aistudio.google.com) (무료 등급은 하루·분당 요청 수 제한이 있음. 한도는 AI Studio에서 확인)
 - 모델은 기본 `gemini-flash-latest`(최신 Flash). 바꾸려면 `GEMINI_MODEL`
 - `.env`를 바꾸면 API 서버를 다시 시작하세요.
+- **캐시·요청 제한** (실제 Gemini 모드에서만): 같은 질문(공백·대소문자 차이 무시)은 하루 동안 저장된 답을 재사용하고, 동시에 들어온 같은 질문도 Gemini는 한 번만 부릅니다. Gemini를 실제로 부르는 요청은 IP당 1분 5번·하루 30번, 서버 전체 1분 10번(`AI_GLOBAL_PER_MIN`)까지이고 넘으면 429와 "몇 초 뒤 다시" 안내를 줍니다. 둘 다 서버 메모리에 저장하므로 서버를 여러 대로 늘리면 Redis로 옮겨야 합니다.
 
 ## 화면 (기획 캔버스 그대로, 모바일 기준)
 
