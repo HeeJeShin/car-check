@@ -1,0 +1,16 @@
+{
+  "name": "car-check-e2e",
+  "private": true,
+  "description": "브라우저로 실제 화면을 눌러보는 E2E 테스트 (Playwright). API·화면·DB를 테스트 전용으로 띄웁니다.",
+  "scripts": {
+    "preinstall": "node ../scripts/check-pnpm.mjs",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "^22",
+    "typescript": "5.9.3"
+  }
+}

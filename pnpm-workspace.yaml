@@ -1,7 +1,8 @@
 packages:
   - api
   - web
-# api·web이 각자 잠금 파일(pnpm-lock.yaml)을 그대로 씁니다.
+  - e2e
+# api·web·e2e가 각자 잠금 파일(pnpm-lock.yaml)을 그대로 씁니다.
 sharedWorkspaceLockfile: false
 ignoredBuiltDependencies:
   - sharp

@@ -5,6 +5,8 @@ import type { NextConfig } from "next";
 const root = path.join(__dirname, "..");
 
 const nextConfig: NextConfig = {
+  // E2E 테스트는 다른 API 주소로 따로 빌드하므로, 개발용 빌드(.next)를 덮어쓰지 않게 폴더를 나눕니다.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   outputFileTracingRoot: root,
   turbopack: { root },
 };

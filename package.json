@@ -11,6 +11,9 @@
     "postinstall": "node scripts/copy-env.mjs",
     "db:setup": "pnpm --dir api db:up && pnpm --dir api exec prisma migrate deploy && pnpm --dir api db:seed",
     "dev": "pnpm --recursive --parallel --stream run dev",
-    "test": "pnpm --dir api test"
+    "test": "pnpm --dir api test",
+    "typecheck": "pnpm --dir api exec tsc --noEmit -p tsconfig.json && pnpm --dir web exec tsc --noEmit && pnpm --dir e2e exec tsc --noEmit",
+    "lint": "pnpm --dir web lint",
+    "test:e2e": "pnpm --dir e2e test"
   }
 }

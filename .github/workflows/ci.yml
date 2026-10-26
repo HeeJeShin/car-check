@@ -1,0 +1,86 @@
+# PR과 master 푸시마다: 타입 체크 · 린트 · 단위 테스트(Vitest) → 통과하면 E2E(Playwright)
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# 같은 브랜치에 새로 푸시하면 이전 실행은 취소
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 타입 체크 · 린트 · 단위 테스트
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # package.json의 packageManager(pnpm 버전)를 그대로 씀
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: "**/pnpm-lock.yaml"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+
+  e2e:
+    name: E2E (Playwright)
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # 테스트 전용 DB. 로컬 docker-compose와 같은 계정·포트(5434)로 띄워 설정을 똑같이 씁니다.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: car
+          POSTGRES_PASSWORD: car
+          POSTGRES_DB: car_check_e2e
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U car -d car_check_e2e"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: "**/pnpm-lock.yaml"
+      - run: pnpm install --frozen-lockfile
+
+      # 브라우저는 크고 자주 안 바뀌어서 Playwright 버전별로 캐시
+      - name: Playwright 버전
+        id: pw
+        run: echo "version=$(node -p "require('./e2e/node_modules/@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: 크롬 설치
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: pnpm --dir e2e exec playwright install --with-deps chromium
+      - name: 크롬 실행에 필요한 시스템 패키지
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: pnpm --dir e2e exec playwright install-deps chromium
+
+      - run: pnpm test:e2e
+
+      # 실패하면 화면·네트워크 기록(trace)이 담긴 리포트를 내려받을 수 있게
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7

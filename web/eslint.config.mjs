@@ -9,6 +9,7 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".next-e2e/**", // E2E 테스트용 빌드
     "out/**",
     "build/**",
     "next-env.d.ts",
