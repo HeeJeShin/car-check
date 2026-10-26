@@ -7,8 +7,9 @@ services:
     plan: free # 15분 동안 요청이 없으면 잠들고, 다음 첫 요청이 30초쯤 걸림
     region: singapore # Neon DB(싱가포르)와 같은 곳
     rootDir: api
+    # pnpm은 버전을 고정해 설치 (corepack은 Node 버전에 따라 서명 키 오류가 나서 안 씀)
     # NODE_ENV=production이면 개발용 패키지(typescript·prisma CLI)를 안 깔아서 --prod=false
-    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build
+    buildCommand: npm install -g pnpm@10.27.0 && pnpm install --frozen-lockfile --prod=false && pnpm build
     # 켤 때마다 아직 안 한 마이그레이션을 적용한 뒤 시작 (이미 적용된 건 건너뜀)
     startCommand: pnpm exec prisma migrate deploy && node dist/main.js
     healthCheckPath: /health

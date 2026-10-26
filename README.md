@@ -21,13 +21,13 @@
 준비물: Node 22+, Docker Desktop. **패키지 매니저는 pnpm만 씁니다** (npm·yarn으로 설치하면 안내 메시지와 함께 멈춰요).
 
 ```bash
-corepack enable           # 처음 한 번만. Node에 들어 있는 도구가 package.json에 적힌 pnpm 버전을 자동으로 받아요
+npm install -g pnpm       # 처음 한 번만 (또는 brew install pnpm)
 pnpm install              # 저장소 맨 위 폴더에서. api·web을 한 번에 설치하고, .env가 없으면 .env.example을 복사해 둡니다
 pnpm db:setup             # 처음 한 번: PostgreSQL 컨테이너(포트 5434) + 테이블 생성 + 샘플 데이터 (⚠️ 기존 데이터는 지워짐)
 pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 http://localhost:3201 동시 실행
 ```
 
-- `corepack`이 없다고 나오면(Node 25 이상) `npm install -g pnpm` 으로 pnpm만 따로 설치하세요.
+- `corepack enable`로 pnpm을 받는 방법도 있지만, Node 22.13 이하의 corepack은 서명 키가 오래돼 `Cannot find matching keyid` 오류로 pnpm이 실행되지 않습니다. 그럴 땐 `corepack disable` 후 위처럼 npm으로 설치하세요.
 - 다음부터는 Docker Desktop을 켜고 `pnpm --dir api db:up` → `pnpm dev`만 하면 됩니다.
 - 하나만 따로 띄우려면 `pnpm --dir api dev` / `pnpm --dir web dev`.
 
