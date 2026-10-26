@@ -7,9 +7,11 @@
 import { ApiError, GoogleGenAI } from "@google/genai";
 import { HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { CarsService } from "../cars/cars.service";
+import { AiCache, normalizeText } from "./ai-cache";
 import { GuideDto, RecommendDto } from "./dto/ai.dto";
 import { MOCK_GUIDE, MOCK_RECOMMEND } from "./mock-answers";
 import { GUIDE_SYSTEM, RECOMMEND_SCHEMA, RECOMMEND_SYSTEM } from "./prompts";
+import { type Limit, RateLimiter } from "./rate-limiter";
 
 export type AiMode = "gemini" | "mock" | "off";
 
@@ -21,11 +23,27 @@ export type RecommendResult = {
   cars: (RecommendedCar & { carModels: LinkedCar[] })[];
   nextSteps: string[];
 };
+type AiRecommendation = { summary: string; cars: RecommendedCar[]; nextSteps: string[] };
+
+const MINUTE = 60_000;
+const DAY = 24 * 60 * MINUTE;
+// Gemini를 실제로 부르는 횟수 제한. 전체 한도는 쓰는 모델의 무료 등급 분당 한도보다 조금 낮게 잡으세요(AI Studio에서 확인).
+export const AI_LIMITS = {
+  perIpMinute: { max: 5, windowMs: MINUTE, label: "1분에 5번" },
+  perIpDay: { max: 30, windowMs: DAY, label: "하루 30번" },
+  globalMinute: { max: Number(process.env.AI_GLOBAL_PER_MIN) || 10, windowMs: MINUTE, label: "전체" },
+} satisfies Record<string, Limit>;
+const CACHE_TTL = DAY; // 같은 질문 답은 하루 동안 재사용
+const CACHE_MAX = 500; // 질문 500개까지 저장. 넘으면 오래 안 쓴 것부터 지움
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private client?: GoogleGenAI;
+  private readonly guideCache = new AiCache<string>(CACHE_TTL, CACHE_MAX);
+  private readonly recommendCache = new AiCache<AiRecommendation>(CACHE_TTL, CACHE_MAX);
+  private readonly limiter = new RateLimiter();
+  private calls = 0;
 
   constructor(private readonly cars: CarsService) {}
 
@@ -35,37 +53,67 @@ export class AiService {
     return "off";
   }
 
-  async guide(dto: GuideDto): Promise<{ answer: string }> {
+  /** ip: 요청 제한용 (컨트롤러가 넘겨줌) */
+  async guide(dto: GuideDto, ip: string): Promise<{ answer: string }> {
     const mode = this.ensureOn();
     if (mode === "mock") return { answer: MOCK_GUIDE };
-    const text = await this.generate(GUIDE_SYSTEM, dto.question);
-    return { answer: text };
+    const answer = await this.guideCache.getOrCreate(normalizeText(dto.question), () => {
+      this.acquire(ip);
+      return this.generate(GUIDE_SYSTEM, dto.question);
+    });
+    return { answer };
   }
 
-  async recommend(dto: RecommendDto): Promise<RecommendResult> {
+  async recommend(dto: RecommendDto, ip: string): Promise<RecommendResult> {
     const mode = this.ensureOn();
-    let result: { summary: string; cars: RecommendedCar[]; nextSteps: string[] };
+    let result: AiRecommendation;
     if (mode === "mock") {
       result = MOCK_RECOMMEND;
     } else {
-      const prompt = [
-        `용도: ${dto.purpose}`,
-        `예산: ${dto.budgetManwon}만원`,
-        dto.passengers && `주로 타는 인원: ${dto.passengers}명`,
-        dto.notes && `기타: ${dto.notes}`,
-      ]
-        .filter(Boolean)
-        .join("\n");
-      const text = await this.generate(RECOMMEND_SYSTEM, prompt, RECOMMEND_SCHEMA);
-      try {
-        result = JSON.parse(text);
-      } catch {
-        throw new HttpException("AI 응답을 해석하지 못했습니다. 다시 시도해주세요.", HttpStatus.BAD_GATEWAY);
-      }
+      const key = [normalizeText(dto.purpose), dto.budgetManwon, dto.passengers ?? "", normalizeText(dto.notes ?? "")].join("|");
+      result = await this.recommendCache.getOrCreate(key, () => {
+        this.acquire(ip);
+        return this.askRecommend(dto);
+      });
     }
     // AI가 추천한 차종 이름을 우리 DB와 연결 → "이 차의 고질병 보기" 링크
+    // (캐시에는 AI 답만 저장하고, 연결은 매번 새로 해서 DB에 차종이 추가되면 바로 반영)
     const models = await this.cars.findAll();
     return { ...result, cars: result.cars.map((car) => ({ ...car, carModels: linkCar(car.name, models) })) };
+  }
+
+  private async askRecommend(dto: RecommendDto): Promise<AiRecommendation> {
+    const prompt = [
+      `용도: ${dto.purpose}`,
+      `예산: ${dto.budgetManwon}만원`,
+      dto.passengers && `주로 타는 인원: ${dto.passengers}명`,
+      dto.notes && `기타: ${dto.notes}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const text = await this.generate(RECOMMEND_SYSTEM, prompt, RECOMMEND_SCHEMA);
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new HttpException("AI 응답을 해석하지 못했습니다. 다시 시도해주세요.", HttpStatus.BAD_GATEWAY);
+    }
+  }
+
+  /** Gemini를 부르기 직전에 제한 확인. 넘었으면 429. */
+  private acquire(ip: string) {
+    if (++this.calls % 100 === 0) this.limiter.prune(DAY);
+    const blocked = this.limiter.tryAcquire([
+      { key: `ip:${ip}`, limit: AI_LIMITS.perIpMinute },
+      { key: `ip-day:${ip}`, limit: AI_LIMITS.perIpDay },
+      { key: "global", limit: AI_LIMITS.globalMinute },
+    ]);
+    if (!blocked) return;
+    const wait = blocked.retryAfterSec >= 3600 ? `${Math.ceil(blocked.retryAfterSec / 3600)}시간` : `${blocked.retryAfterSec}초`;
+    const message =
+      blocked.label === "전체"
+        ? `지금 AI 질문이 몰려 있어요. ${wait} 뒤에 다시 시도해주세요.`
+        : `AI 질문은 ${blocked.label}까지 할 수 있어요. ${wait} 뒤에 다시 시도해주세요.`;
+    throw new HttpException(message, HttpStatus.TOO_MANY_REQUESTS);
   }
 
   private ensureOn(): Exclude<AiMode, "off"> {
