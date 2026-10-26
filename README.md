@@ -3,7 +3,7 @@
 차종과 연식을 넣으면 **중고차를 살 때 확인할 고질병과 체크 포인트**를 알려주는 서비스.
 
 - **시작일**: 2026-10-10
-- **구성**: `api/` NestJS + Prisma + PostgreSQL · `web/` Next.js + Tailwind (포트 3201)
+- **구성**: `api/` NestJS + Prisma + PostgreSQL · `web/` Next.js + Tailwind (포트 3201) · `e2e/` Playwright
 - **AI**: Google Gemini (무료 등급). **AI 없이도 핵심 기능은 전부 동작합니다.**
 
 ## 역할 나누기: 데이터는 사람이, 안내는 AI가
@@ -138,9 +138,21 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | POST | `/ai/guide` · `/ai/recommend` | 무엇부터 알아볼지 · 용도별 추천 |
 
 ## 테스트
+
 ```bash
-pnpm test
+pnpm test        # 단위 테스트 (Vitest, api)
+pnpm typecheck   # api·web·e2e 타입 체크
+pnpm lint        # web 린트
+pnpm test:e2e    # E2E (Playwright): 브라우저로 실제 화면을 눌러봄
 ```
+
+**E2E** (`e2e/`): 테스트 전용으로 DB(`car_check_e2e`, 개발 DB와 별개)·API(3290)·화면(3291, 운영 빌드)을 띄운 뒤 모바일 크롬으로 확인합니다. 개발 서버가 떠 있어도 겹치지 않아요.
+- 처음 한 번: `pnpm --dir e2e exec playwright install chromium` (브라우저 설치). Docker DB(`pnpm --dir api db:up`)가 켜져 있어야 합니다.
+- 흐름: 차종 검색 → 세대 선택 → 리포트(체크리스트 새로고침 유지) → 점검 가이드(전기차는 엔진오일 없음) / 에디터 초안 → 검토 요청 → 관리자 승인 → 사용자 리포트에 바로 "검증됨"(ISR 갱신) / 로그인 없이 쓰기 차단 / 없는 차종 404
+- 로그인은 개발용 이메일 로그인을 씁니다(구글 계정 불필요).
+- 실패하면 `pnpm --dir e2e report`로 화면·네트워크 기록(trace)을 볼 수 있어요.
+
+**CI** (`.github/workflows/ci.yml`): PR과 master 푸시마다 GitHub Actions에서 타입 체크·린트·단위 테스트 → E2E 순서로 돌립니다. DB는 Postgres 서비스 컨테이너, 실패하면 Playwright 리포트를 내려받을 수 있어요.
 
 ## 다음 단계 (아이디어)
 - 고질병 데이터 채우기·검증하기 (인기 차종부터)
