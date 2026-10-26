@@ -1,7 +1,8 @@
 // 본넷 점검 포인트 관리 API (빨간 동그라미 추가·삭제). 컨트롤러·서비스·DTO가 작아서 한 파일에 둡니다.
 import { Body, Controller, Delete, HttpCode, Injectable, Module, NotFoundException, Param, ParseIntPipe, Post } from "@nestjs/common";
-import { ApiProperty, ApiPropertyOptional, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags } from "@nestjs/swagger";
 import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
+import { Roles } from "../auth/auth.guard";
 import { PrismaService } from "../prisma/prisma.service";
 
 export class CreateInspectionPointDto {
@@ -65,12 +66,15 @@ export class InspectionPointsService {
   }
 }
 
+// 로그인 필요. 추가: ADMIN, EDITOR / 삭제: ADMIN만 (auth.guard.ts 기본값)
 @ApiTags("inspection-points")
+@ApiBearerAuth()
 @Controller("inspection-points")
 export class InspectionPointsController {
   constructor(private readonly points: InspectionPointsService) {}
 
   @Post()
+  @Roles("ADMIN", "EDITOR")
   create(@Body() dto: CreateInspectionPointDto) {
     return this.points.create(dto);
   }

@@ -1,18 +1,53 @@
 "use client";
 // 데이터 관리: 차종(세대)·엔진 추가, 고질병 추가·검증·삭제, 본넷 점검 포인트 추가·삭제.
 // 직접 찾아본 정보를 넣는 곳입니다. "검증됨"은 출처 URL이 있어야 저장됩니다(서버 규칙).
-// 다음 단계: 로그인을 붙여 관리자만 들어오게 막기.
+// 구글 로그인 필요. ADMIN은 전부, EDITOR는 초안 작성까지만(검증·삭제·차종 추가 버튼이 안 보임).
+// 버튼을 숨기는 건 편의일 뿐이고, 실제로 막는 건 API(auth.guard.ts, issues.service.ts)입니다.
 import { useEffect, useState } from "react";
 import { refreshPublicPages } from "@/app/actions";
+import { AdminLogin } from "@/components/admin-login";
 import { BonnetDiagram } from "@/components/bonnet-diagram";
-import { Card, ErrorText, SeverityText, StatusBadge, TopBar, fieldCls } from "@/components/ui";
-import { BODY_LABEL, FUEL_LABEL, PARTS, TRANSMISSION_LABEL, api, yearText, type CarModel, type CarReport, type Inspection, type Severity } from "@/lib/api";
+import { Card, ErrorText, Loading, SeverityText, StatusBadge, TopBar, fieldCls } from "@/components/ui";
+import {
+  ApiError, BODY_LABEL, FUEL_LABEL, PARTS, TRANSMISSION_LABEL, api, loginToken, saveLoginToken, yearText,
+  type AuthUser, type CarModel, type CarReport, type Inspection, type Severity,
+} from "@/lib/api";
 
 const btn = "rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50";
 const subtleBtn = "rounded-lg border border-field bg-white px-3 py-1.5 text-sm";
 const textareaCls = "h-16 w-full rounded-xl border border-field bg-white px-3.5 py-2.5 text-sm outline-none focus:border-accent";
 
 export default function AdminPage() {
+  // undefined = 저장된 토큰 확인 중, null = 로그인 안 됨
+  const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
+
+  useEffect(() => {
+    const token = loginToken();
+    (token ? api<AuthUser>("/auth/me") : Promise.resolve(null)).then(setUser, () => {
+      saveLoginToken(null); // 만료됐거나 서버 비밀키가 바뀐 토큰
+      setUser(null);
+    });
+  }, []);
+
+  const logout = () => {
+    saveLoginToken(null);
+    setUser(null);
+  };
+
+  if (user === undefined) return <Loading />;
+  if (!user) {
+    return (
+      <>
+        <TopBar back="/" backLabel="처음으로" title="데이터 관리" />
+        <AdminLogin onLogin={setUser} />
+      </>
+    );
+  }
+  return <AdminConsole user={user} onLogout={logout} />;
+}
+
+function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
+  const isAdmin = user.role === "ADMIN";
   const [cars, setCars] = useState<CarModel[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [report, setReport] = useState<CarReport | null>(null);
@@ -43,10 +78,11 @@ export default function AdminPage() {
     setError(null);
     try {
       await action();
-      await refreshPublicPages();
+      await refreshPublicPages(loginToken());
       setReloadKey((k) => k + 1);
       return true;
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) onLogout(); // 로그인이 만료됨 → 로그인 화면으로
       setError((err as Error).message);
       return false;
     }
@@ -65,8 +101,16 @@ export default function AdminPage() {
 
   return (
     <>
-      <TopBar back="/" backLabel="처음으로" title="데이터 관리" />
+      <TopBar
+        back="/"
+        backLabel="처음으로"
+        title="데이터 관리"
+        right={<button type="button" onClick={onLogout} className="min-h-11 underline">로그아웃</button>}
+      />
       <div className="flex flex-col gap-8 p-5">
+        <p className="text-sm text-muted">
+          <strong className="text-ink">{user.name}</strong> ({user.email}) · {isAdmin ? "관리자: 모든 수정·검증·삭제" : "에디터: 초안 작성·수정만 (검증·삭제는 관리자)"}
+        </p>
         <p className="text-sm text-muted">직접 찾아본 정보를 넣고, 초안을 확인해서 &quot;검증됨&quot;으로 바꿔요.</p>
         <ErrorText message={error} />
 
@@ -99,10 +143,12 @@ export default function AdminPage() {
               <p className="mt-1 text-sm text-body">{issue.description}</p>
               <p className="mt-1 text-sm text-muted">확인법: {issue.checkHow}</p>
               {issue.note && <p className="mt-1 text-xs text-muted">메모: {issue.note}</p>}
-              <div className="mt-3 flex gap-2">
-                {issue.status === "DRAFT" && <button className={subtleBtn} onClick={() => verify(issue.id, issue.sourceUrl)}>검증됨으로</button>}
-                <button className={subtleBtn} onClick={() => remove(`/issues/${issue.id}`, "고질병")}>삭제</button>
-              </div>
+              {isAdmin && (
+                <div className="mt-3 flex gap-2">
+                  {issue.status === "DRAFT" && <button className={subtleBtn} onClick={() => verify(issue.id, issue.sourceUrl)}>검증됨으로</button>}
+                  <button className={subtleBtn} onClick={() => remove(`/issues/${issue.id}`, "고질병")}>삭제</button>
+                </div>
+              )}
             </Card>
           ))}
           {selectedId && <IssueForm carModelId={selectedId} onSubmit={(body) => run(() => api("/issues", { method: "POST", json: body }))} />}
@@ -116,13 +162,13 @@ export default function AdminPage() {
             <Card key={p.id} className="flex items-center gap-2 p-3 text-sm">
               <span className="font-bold">{p.no}. {p.title}</span>
               <span className="text-muted">({p.x}%, {p.y}%)</span>
-              <button className={`${subtleBtn} ml-auto`} onClick={() => remove(`/inspection-points/${p.id}`, "점검 포인트")}>삭제</button>
+              {isAdmin && <button className={`${subtleBtn} ml-auto`} onClick={() => remove(`/inspection-points/${p.id}`, "점검 포인트")}>삭제</button>}
             </Card>
           ))}
           {selectedId && <PointForm carModelId={selectedId} onSubmit={(body) => run(() => api("/inspection-points", { method: "POST", json: body }))} />}
         </section>
 
-        <CarForm onSubmit={(body) => run(() => api("/cars", { method: "POST", json: body }))} />
+        {isAdmin && <CarForm onSubmit={(body) => run(() => api("/cars", { method: "POST", json: body }))} />}
       </div>
     </>
   );

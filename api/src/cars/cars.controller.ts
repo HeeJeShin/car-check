@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query } from "@nestjs/common";
-import { ApiQuery, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { CarsService } from "./cars.service";
 import { CreateCarModelDto } from "./dto/create-car-model.dto";
 
@@ -48,7 +48,8 @@ export class CarsController {
     return this.cars.inspection(id);
   }
 
-  @Post() // 관리용: 차종(세대) + 엔진·미션 추가
+  @Post() // 관리용: 차종(세대) + 엔진·미션 추가. ADMIN만 (auth.guard.ts 기본값)
+  @ApiBearerAuth()
   create(@Body() dto: CreateCarModelDto) {
     return this.cars.create(dto);
   }

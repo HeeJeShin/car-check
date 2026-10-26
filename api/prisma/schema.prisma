@@ -132,3 +132,21 @@ model InspectionPoint {
 
   @@index([carModelId])
 }
+
+// ── 로그인 ──
+// 관리 화면에 구글 계정으로 로그인한 사람. 역할은 .env의 ADMIN_EMAILS·EDITOR_EMAILS로 정하고 로그인할 때마다 맞춥니다.
+// (나중에 고질병 변경 이력에 "누가 바꿨는지"를 남길 때 이 id를 씁니다)
+enum Role {
+  ADMIN // 모든 수정 + "검증됨" 처리 + 삭제
+  EDITOR // 초안 작성·수정만. "검증됨"으로 바꾸거나 검증된 정보를 고칠 수 없음
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  name        String
+  picture     String?
+  role        Role
+  createdAt   DateTime @default(now())
+  lastLoginAt DateTime @default(now())
+}
