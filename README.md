@@ -50,6 +50,26 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 - `.env`를 바꾸면 API 서버를 다시 시작하세요.
 - **캐시·요청 제한** (실제 Gemini 모드에서만): 같은 질문(공백·대소문자 차이 무시)은 하루 동안 저장된 답을 재사용하고, 동시에 들어온 같은 질문도 Gemini는 한 번만 부릅니다. Gemini를 실제로 부르는 요청은 IP당 1분 5번·하루 30번, 서버 전체 1분 10번(`AI_GLOBAL_PER_MIN`)까지이고 넘으면 429와 "몇 초 뒤 다시" 안내를 줍니다. 둘 다 서버 메모리에 저장하므로 서버를 여러 대로 늘리면 Redis로 옮겨야 합니다.
 
+## 관리 화면 로그인 (구글)
+
+`/admin`과 쓰기 API(POST·PATCH·DELETE)는 로그인이 필요합니다. 조회(GET)와 AI 질문은 누구나 쓸 수 있어요.
+
+| 역할 | 할 수 있는 것 | 정하는 곳 (`api/.env`) |
+|---|---|---|
+| ADMIN | 모든 수정 + "검증됨" 처리 + 삭제 + 차종 추가 | `ADMIN_EMAILS` |
+| EDITOR | 고질병 초안·점검 포인트 작성, 초안 수정. 검증됨 처리·검증된 정보 수정·삭제는 불가 | `EDITOR_EMAILS` |
+| 그 외 구글 계정 | 로그인 거절 | |
+
+- 쓰기 API는 **기본으로 ADMIN만** 열려 있고, 에디터도 되는 곳은 `@Roles("ADMIN", "EDITOR")`, 로그인 없이 되는 곳은 `@Public()`로 표시합니다(`api/src/auth/auth.guard.ts`). 새 API를 만들고 깜빡해도 열려 있지 않아요.
+- 비밀번호는 다루지 않습니다. 구글이 서명한 ID 토큰을 API가 검증하고(서명·발급자·우리 Client ID·만료·이메일 확인), 우리 서비스용 토큰(12시간)을 발급합니다.
+
+**구글 로그인 켜기** (한 번만)
+1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → 사용자 인증 정보 만들기 → **OAuth 클라이언트 ID** → 애플리케이션 유형 **웹 애플리케이션**
+2. **승인된 JavaScript 원본**에 `http://localhost:3201` 추가 (배포하면 실제 화면 주소도)
+3. 발급된 **클라이언트 ID**를 `api/.env`의 `GOOGLE_CLIENT_ID`에 넣고 API 다시 시작 (클라이언트 보안 비밀번호는 필요 없음)
+
+구글 설정 전에도 `AUTH_DEV_LOGIN=true`면 관리 화면에서 **이메일만으로 로그인**할 수 있어요(개발·테스트용, 운영 환경에서는 항상 꺼짐). 이메일은 `ADMIN_EMAILS`·`EDITOR_EMAILS`에 있어야 합니다.
+
 ## 화면 (기획 캔버스 그대로, 모바일 기준)
 
 | 주소 | 내용 |
@@ -60,7 +80,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | `/cars/[id]` | 고질병 리포트: 엔진·미션 요약 → 고질병(검증됨 먼저) → 매장 체크리스트(브라우저에 저장) → 공통 점검 |
 | `/cars/[id]/inspect` | 매장 점검 가이드: 스펙별 주의점(DCT → 저속 꿀렁거림 등) → 본넷 그림 + 빨간 동그라미 → 시운전 순서 |
 | `/guide` | AI: 무엇부터 알아볼지, 용도별 추천 (추천 차종 → 세대 선택으로 연결) |
-| `/admin` | 차종·엔진 추가, 고질병 추가·검증·삭제, 이 차 본넷 점검 포인트 추가 |
+| `/admin` | **구글 로그인 필요.** 차종·엔진 추가, 고질병 추가·검증·삭제, 이 차 본넷 점검 포인트 추가 |
 
 **조회 화면은 ISR**(`/cars`, `/generations/…`, `/cars/[id]`, `/cars/[id]/inspect`): 서버가 API를 불러 화면을 만들어 저장해 두고, 다음 방문자부터는 저장된 화면을 그대로 줍니다(API 호출 없음). 1시간마다 뒤에서 새로 만들고, 관리 화면에서 데이터를 고치면 바로 지워져 다음 방문 때 반영됩니다(`web/src/app/actions.ts`). 체크리스트·필터처럼 움직이는 부분만 브라우저 컴포넌트(`web/src/components/`)입니다.
 - `pnpm build` 때 `/cars`를 미리 만들기 때문에 **빌드할 때 API가 켜져 있어야 합니다.** 나머지 화면은 첫 방문 때 만들어요.
@@ -73,6 +93,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | `CarModel` | 세대 하나. `name`(투싼) + `displayName`(올 뉴 투싼) + 세대 코드 + 연식 구간 + 차급 + 차 종류(`bodyType`: 세단·SUV·경차·승합) |
 | `Powertrain` | 세대별 엔진·미션 조합 (연료, 미션 종류 AT·DCT·CVT·MT). 미션·연료만 넣으면 주의점이 자동으로 붙음 (`api/src/cars/powertrain-tips.ts`) |
 | `CarIssue` | 고질병. 초안(DRAFT) / 검증됨(VERIFIED, 출처 필수) |
+| `User` | 관리 화면에 로그인한 구글 계정 + 역할(ADMIN·EDITOR) |
 | `InspectionPoint` | 본넷 그림 위 빨간 동그라미. `carModelId`가 없으면 모든 차 공통, 있으면 그 차만(점선). 위치는 그림 기준 % |
 
 스키마를 고치면 `api` 폴더에서 `pnpm db:migrate` (마이그레이션 + Prisma Client 재생성)를 실행하세요.
@@ -89,9 +110,12 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | GET | `/cars/:id` | 리포트: 세대 + 엔진·미션 + 주의점 + 고질병 + 공통 점검 |
 | GET | `/cars/:id/inspection` | 점검 가이드: 주의점 + 본넷 포인트 + 시운전 순서 |
 | GET | `/cars` | 세대 전체 (관리용) |
-| POST | `/cars` | 세대 + 엔진·미션 추가 |
-| POST · PATCH · DELETE | `/issues`, `/issues/:id` | 고질병 추가·수정·검증(`{"status":"VERIFIED","sourceUrl":"..."}`)·삭제 |
-| POST · DELETE | `/inspection-points`, `/inspection-points/:id` | 본넷 점검 포인트 추가·삭제 |
+| GET · POST | `/auth/config`, `/auth/google`, `/auth/dev`, `/auth/me` | 로그인 설정 · 구글 로그인 · 개발용 로그인 · 내 정보 |
+| POST | `/cars` | 세대 + 엔진·미션 추가 🔒ADMIN |
+| POST · PATCH · DELETE | `/issues`, `/issues/:id` | 고질병 추가·수정 🔒ADMIN·EDITOR, 검증(`{"status":"VERIFIED","sourceUrl":"..."}`)·삭제 🔒ADMIN |
+| POST · DELETE | `/inspection-points`, `/inspection-points/:id` | 본넷 점검 포인트 추가 🔒ADMIN·EDITOR, 삭제 🔒ADMIN |
+
+🔒 표시는 `Authorization: Bearer <로그인 토큰>`이 필요합니다. API 문서(`/docs`)의 Authorize 버튼에 토큰을 넣으면 바로 시험할 수 있어요.
 | GET | `/ai/status` | AI 모드 (`gemini` / `mock` / `off`) |
 | POST | `/ai/guide` · `/ai/recommend` | 무엇부터 알아볼지 · 용도별 추천 |
 
@@ -102,5 +126,4 @@ pnpm test
 
 ## 다음 단계 (아이디어)
 - 고질병 데이터 채우기·검증하기 (인기 차종부터)
-- 관리 화면 로그인 (지금은 누구나 수정 가능)
 - 매물 정보(연식·주행거리·가격) 입력 → 상식 검사 ("연식 대비 주행거리가 너무 적음" 등)

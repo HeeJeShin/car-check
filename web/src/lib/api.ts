@@ -73,6 +73,28 @@ export const FUEL_LABEL: Record<Fuel, string> = { GASOLINE: "가솔린", DIESEL:
 export const BODY_LABEL: Record<BodyType, string> = { SUV: "RV/SUV", SEDAN: "세단", LIGHT: "경차", VAN: "승합" };
 export const TRANSMISSION_LABEL: Record<Transmission, string> = { AT: "자동", DCT: "DCT", CVT: "CVT", MT: "수동", REDUCER: "감속기(전기차)" };
 
+// ── 관리 화면 로그인 ──
+// 로그인 토큰은 이 브라우저에만 저장하고, api()가 요청마다 붙여 보냅니다. (서버에서 도는 조회 화면은 토큰 없이 호출)
+export type Role = "ADMIN" | "EDITOR";
+export type AuthUser = { id: number; email: string; name: string; picture: string | null; role: Role };
+export type AuthConfig = { googleClientId: string | null; devLogin: boolean };
+
+const TOKEN_KEY = "jungu-admin-token";
+export function loginToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+export function saveLoginToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {}
+}
+
 /** API가 실패 응답을 줬을 때. status로 404(없는 차종) 같은 경우를 구분합니다. */
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
@@ -84,9 +106,13 @@ export class ApiError extends Error {
 export async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   let res: Response;
   try {
+    const token = loginToken();
     res = await fetch(`${API_URL}${path}`, {
       ...init,
-      headers: init?.json !== undefined ? { "Content-Type": "application/json" } : undefined,
+      headers: {
+        ...(init?.json !== undefined && { "Content-Type": "application/json" }),
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
       body: init?.json !== undefined ? JSON.stringify(init.json) : init?.body,
     });
   } catch {
