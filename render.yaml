@@ -7,6 +7,8 @@ services:
     plan: free # 15분 동안 요청이 없으면 잠들고, 다음 첫 요청이 30초쯤 걸림
     region: singapore # Neon DB(싱가포르)와 같은 곳
     rootDir: api
+    # master에 푸시해도 바로 배포하지 않고, GitHub Actions(타입 체크·단위 테스트·E2E)가 모두 통과한 뒤에만 배포
+    autoDeployTrigger: checksPass
     # pnpm은 버전을 고정해 설치 (corepack은 Node 버전에 따라 서명 키 오류가 나서 안 씀)
     # NODE_ENV=production이면 개발용 패키지(typescript·prisma CLI)를 안 깔아서 --prod=false
     buildCommand: npm install -g pnpm@10.27.0 && pnpm install --frozen-lockfile --prod=false && pnpm build

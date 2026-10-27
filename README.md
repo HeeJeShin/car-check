@@ -193,7 +193,9 @@ pnpm test:e2e    # E2E (Playwright): 브라우저로 실제 화면을 눌러봄
 6. **연결 마무리**: Render `WEB_ORIGIN`에 Vercel 주소 → Google Cloud Console의 승인된 JavaScript 원본에 Vercel 주소 추가.
 7. **확인**: `https://<render 주소>/health` → `{"ok":true}`. 관리자 토큰으로 `POST /health/sentry-test`를 부르면 Sentry에 테스트 에러가 들어옵니다.
 
-이후에는 master에 푸시하면 Render·Vercel이 자동으로 다시 배포하고, 새 마이그레이션은 Render가 켜질 때 적용합니다.
+이후에는 master에 푸시하면 **CI(GitHub Actions)가 모두 통과한 뒤에만** Render·Vercel이 자동으로 다시 배포하고, 새 마이그레이션은 Render가 켜질 때 적용합니다.
+- Render: `render.yaml`의 `autoDeployTrigger: checksPass` (CI 통과 후 배포)
+- Vercel: 프로젝트 Settings → **Deployment Checks**에서 CI 두 작업(타입 체크·린트·단위 테스트, E2E)을 필수로 지정 (대시보드 설정)
 
 ## 다음 단계
 기획과 일정은 [docs/plan.md](docs/plan.md)에 있습니다 (분류 화면 → 엔진룸 사진 → AI로 고질병 후보 모으기 → 커뮤니티 → 추천).
