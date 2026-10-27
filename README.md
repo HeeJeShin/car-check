@@ -5,6 +5,7 @@
 > **학습 프로젝트입니다.** 프론트엔드 개발자가 백엔드(NestJS·Prisma·PostgreSQL)·인증·테스트·배포까지 새 스택을 직접 익히려고 만들고 있습니다.
 > 무엇을 새로 익혔는지, 폴더를 왜 이렇게 나눴는지는 [학습 노트](docs/study-notes.md)에 정리했습니다. 기획은 [plan.md](docs/plan.md), 회고는 [retrospective.md](docs/retrospective.md).
 
+- **사이트**: https://car-check-fawn-zeta.vercel.app · **API**: https://car-check-api-vfyd.onrender.com (2026-10-27 배포)
 - **시작일**: 2026-10-10
 - **구성**: `api/` NestJS + Prisma + PostgreSQL · `web/` Next.js + Tailwind (포트 3201) · `e2e/` Playwright
 - **AI**: Google Gemini (무료 등급). **AI 없이도 핵심 기능은 전부 동작합니다.**
@@ -171,7 +172,19 @@ pnpm test:e2e    # E2E (Playwright): 브라우저로 실제 화면을 눌러봄
 - Render 무료는 15분 동안 요청이 없으면 잠들고 다음 첫 요청이 30초쯤 걸립니다. 조회 화면은 Vercel에 저장된 화면(ISR)을 주므로, API가 자는 동안에도 사용자는 기다리지 않아요(1시간마다 뒤에서 갱신할 때 API를 깨움).
 - Sentry는 DSN이 비어 있으면 꺼져 있습니다. 처리 못 한 에러(500대)만 보내고, 요청 헤더·본문·쿠키·사용자 정보는 보내지 않습니다.
 
-**처음 배포 순서**
+**지금 배포된 곳** (2026-10-27)
+
+| 무엇 | 주소 |
+|---|---|
+| 화면 | https://car-check-fawn-zeta.vercel.app |
+| API | https://car-check-api-vfyd.onrender.com (`/health`로 상태 확인) |
+
+- 배포에 넣는 값은 폴더마다 로컬용 옆에 둡니다: `api/.env.render`(Render에 붙여 넣기), `web/.env.vercel`(Vercel에 붙여 넣기). 둘 다 저장소에 올라가지 않습니다(`.git/info/exclude`).
+- Render·Vercel 주소는 이름이 겹치면 뒤에 글자가 붙습니다. 짐작하지 말고 대시보드에서 복사하세요.
+- `WEB_ORIGIN`·`NEXT_PUBLIC_API_URL`은 `https://`를 포함하고 끝에 `/`를 붙이지 않습니다.
+- ⚠️ `db:seed`는 전부 지우고 다시 넣습니다. 운영 DB에 관리 화면에서 승인한 데이터가 생긴 뒤에는 운영 DB에 시드를 돌리지 말고 관리 화면으로 추가하세요.
+
+**처음 배포 순서** (다시 만들 때)
 1. **Neon**: 프로젝트 만들기(리전 AWS Singapore) → Connection string 두 개 복사: Pooled(`-pooler`가 들어간 주소)와 Direct.
 2. **DB 채우기** (로컬에서 한 번): `DATABASE_URL="<Direct 주소>" pnpm --dir api exec prisma migrate deploy` → `DATABASE_URL="<Direct 주소>" pnpm --dir api db:seed`
 3. **Sentry**: 조직 만들기 → 프로젝트 2개(Next.js, NestJS) → 각 DSN 복사.
@@ -182,6 +195,5 @@ pnpm test:e2e    # E2E (Playwright): 브라우저로 실제 화면을 눌러봄
 
 이후에는 master에 푸시하면 Render·Vercel이 자동으로 다시 배포하고, 새 마이그레이션은 Render가 켜질 때 적용합니다.
 
-## 다음 단계 (아이디어)
-- 고질병 데이터 채우기·검증하기 (인기 차종부터)
-- 매물 정보(연식·주행거리·가격) 입력 → 상식 검사 ("연식 대비 주행거리가 너무 적음" 등)
+## 다음 단계
+기획과 일정은 [docs/plan.md](docs/plan.md)에 있습니다 (분류 화면 → 엔진룸 사진 → AI로 고질병 후보 모으기 → 커뮤니티 → 추천).
