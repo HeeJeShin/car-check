@@ -2,6 +2,9 @@
 
 차종과 연식을 넣으면 **중고차를 살 때 확인할 고질병과 체크 포인트**를 알려주는 서비스.
 
+> **학습 프로젝트입니다.** 프론트엔드 개발자가 백엔드(NestJS·Prisma·PostgreSQL)·인증·테스트·배포까지 새 스택을 직접 익히려고 만들고 있습니다.
+> 무엇을 새로 익혔는지, 폴더를 왜 이렇게 나눴는지는 [학습 노트](docs/study-notes.md)에 정리했습니다. 기획은 [plan.md](docs/plan.md), 회고는 [retrospective.md](docs/retrospective.md).
+
 - **시작일**: 2026-10-10
 - **구성**: `api/` NestJS + Prisma + PostgreSQL · `web/` Next.js + Tailwind (포트 3201) · `e2e/` Playwright
 - **AI**: Google Gemini (무료 등급). **AI 없이도 핵심 기능은 전부 동작합니다.**
