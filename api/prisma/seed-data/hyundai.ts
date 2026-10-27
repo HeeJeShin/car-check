@@ -67,7 +67,16 @@ export const HYUNDAI_MODELS: SeedCarModel[] = [
   { maker: "현대", name: "그랜저", displayName: "그랜저 IG", generation: "IG", segment: "준대형 세단", bodyType: "SEDAN", yearFrom: 2016, yearTo: 2019,
     aliases: ["grandeur", "그랜저ig"], powertrains: [gasoline("2.4", "6단 자동"), gasoline("3.0", "8단 자동"), diesel("2.2", "8단 자동"), hybrid("2.4", "6단 자동"), lpg("3.0", "6단 자동")] },
   { maker: "현대", name: "그랜저", displayName: "더 뉴 그랜저", generation: "IG 부분변경", segment: "준대형 세단", bodyType: "SEDAN", yearFrom: 2019, yearTo: 2022,
-    aliases: ["grandeur", "더뉴그랜저"], powertrains: [gasoline("2.5", "8단 자동"), gasoline("3.3", "8단 자동"), hybrid("2.4", "6단 자동"), lpg("3.0", "6단 자동")] },
+    aliases: ["grandeur", "더뉴그랜저"], powertrains: [gasoline("2.5", "8단 자동"), gasoline("3.3", "8단 자동"), hybrid("2.4", "6단 자동"), lpg("3.0", "6단 자동")],
+    issues: [{
+      engine: "2.5 가솔린",
+      part: "엔진",
+      title: "스마트스트림 2.5 엔진오일 감소",
+      description: "엔진오일이 교환 주기 전에 눈에 띄게 줄어드는 사례가 많이 보고된 엔진입니다. 2020년 오일 게이지(딥스틱) 측정 범위를 늘리는 리콜이 있었고, 오일 소모가 심한 차는 개선형 쇼트엔진(피스톤·실린더 블록 등)으로 무상 교환해 주는 조치가 있었으며, 2021년에는 국토부 결함 조사도 진행됐습니다. 설계에서 비롯된 문제라는 지적이 있어 구매는 신중히 검토하고, 그대로 탄다면 오일량을 자주 확인하며 보충해야 합니다. 개선형 부품이 나온 뒤 2022년식 무렵 후기 생산분은 나아졌다는 이야기가 있지만, 생산 적용 시점은 공식 자료로 확인되지 않았습니다.",
+      checkHow: "① 딥스틱으로 오일량 확인 (MIN 근처면 주의) ② 정비 이력에서 오일 보충, 오일 게이지 교체, 쇼트엔진 교환 기록 확인 (교환했다면 개선품이 들어간 차) ③ 차대번호로 리콜·무상수리 대상과 조치 완료 여부 조회 ④ 시동 직후나 가속할 때 배기구에서 푸른 연기가 나는지 확인",
+      severity: "HIGH",
+      note: "출처 메모: 교통뉴스 2020.9.17 딥스틱 리콜 http://www.cartvnews.com/news/articleView.html?idxno=608054 · 뉴스투데이 2021.10.14 국토부 결함 조사·쇼트엔진 무상교환 https://www.news2day.co.kr/article/20211013500071 — 2022년식 개선 적용 시점은 미확인, 공식 리콜 공지로 검증 필요",
+    }] },
   { maker: "현대", name: "그랜저", displayName: "디 올 뉴 그랜저", generation: "GN7", segment: "준대형 세단", bodyType: "SEDAN", yearFrom: 2022, yearTo: null,
     aliases: ["grandeur", "gn7", "디올뉴그랜저"], powertrains: [gasoline("2.5", "8단 자동"), gasoline("3.5", "8단 자동"), hybrid("1.6 터보", "6단 자동"), lpg("3.5", "8단 자동")] },
 
