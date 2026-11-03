@@ -1,6 +1,7 @@
 // 기아 차종(세대) + 엔진·미션 초안. seed.ts와 add-missing.ts가 같이 씁니다.
 // ⚠️ Claude가 기억으로 쓴 초안입니다. 세대 이름·연식 경계(페이스리프트 시점)·엔진·미션 구성은
 //    기아 공식 자료나 중고차 매물 정보로 확인해 주세요. 주요 엔진만 넣었고 일부 트림은 빠져 있습니다.
+import { smartstream25OilLoss } from "./engine-issues";
 import { iccu } from "./ev-issues";
 import { diesel, ev, gasoline, hybrid, lpg } from "./helpers";
 import type { SeedCarModel } from "./types";
@@ -78,8 +79,18 @@ export const KIA_MODELS: SeedCarModel[] = [
     aliases: ["k5", "더뉴k5"], powertrains: [gasoline("2.0", "6단 자동"), gasoline("1.6 터보", "8단 자동"), hybrid("2.0", "6단 자동"), lpg("2.0", "6단 자동")] },
 
   // K8
+  // K7 (준대형)
+  { maker: "기아", name: "K7", displayName: "K7 1세대", generation: "VG", segment: "준대형 세단", bodyType: "SEDAN", yearFrom: 2009, yearTo: 2016,
+    aliases: ["k7", "k7vg"], powertrains: [gasoline("2.4", "6단 자동"), gasoline("3.0", "6단 자동"), hybrid("2.4", "6단 자동"), lpg("3.0", "6단 자동")] },
+  { maker: "기아", name: "K7", displayName: "올 뉴 K7", generation: "YG", segment: "준대형 세단", bodyType: "SEDAN", yearFrom: 2016, yearTo: 2019,
+    aliases: ["k7", "올뉴k7"], powertrains: [gasoline("2.4", "6단 자동"), gasoline("3.0", "8단 자동"), diesel("2.2", "8단 자동"), hybrid("2.4", "6단 자동"), lpg("3.0", "6단 자동")] },
+  { maker: "기아", name: "K7", displayName: "K7 프리미어", generation: "YG 부분변경", segment: "준대형 세단", bodyType: "SEDAN", yearFrom: 2019, yearTo: 2021,
+    aliases: ["k7", "k7프리미어"], powertrains: [gasoline("2.5", "8단 자동"), gasoline("3.0", "8단 자동"), hybrid("2.4", "6단 자동"), lpg("3.0", "6단 자동")],
+    issues: [smartstream25OilLoss] },
+
   { maker: "기아", name: "K8", displayName: "K8", generation: "GL3", segment: "준대형 세단", bodyType: "SEDAN", yearFrom: 2021, yearTo: 2024,
-    aliases: ["k8"], powertrains: [gasoline("2.5", "8단 자동"), gasoline("3.5", "8단 자동"), hybrid("1.6 터보", "6단 자동"), lpg("3.5", "8단 자동")] },
+    aliases: ["k8"], powertrains: [gasoline("2.5", "8단 자동"), gasoline("3.5", "8단 자동"), hybrid("1.6 터보", "6단 자동"), lpg("3.5", "8단 자동")],
+    issues: [smartstream25OilLoss] },
   { maker: "기아", name: "K8", displayName: "더 뉴 K8", generation: "GL3 부분변경", segment: "준대형 세단", bodyType: "SEDAN", yearFrom: 2024, yearTo: null,
     aliases: ["k8", "더뉴k8"], powertrains: [gasoline("2.5", "8단 자동"), gasoline("3.5", "8단 자동"), hybrid("1.6 터보", "6단 자동"), lpg("3.5", "8단 자동")] },
 
