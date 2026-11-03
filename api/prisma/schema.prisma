@@ -114,6 +114,7 @@ model CarIssue {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   history     IssueHistory[]
+  reports     IssueReport[]
 
   @@index([carModelId])
 }
@@ -137,6 +138,25 @@ model IssueHistory {
   user       User          @relation(fields: [userId], references: [id])
   userId     Int
   createdAt  DateTime      @default(now())
+
+  @@index([issueId, createdAt])
+}
+
+// 사용자 제보: 고질병 카드의 "틀린 내용 있어요". 로그인 없이 받습니다(IP당 요청 제한).
+// 운영자가 답변(answer)을 달아야 사용자 화면에 공개됩니다. 답변 전 제보는 개수만 보여요(욕설·도배가 그대로 올라가지 않게).
+// 제보는 고질병 상태를 직접 바꾸지 않습니다. 운영자가 읽고 필요하면 심사 흐름으로 고칩니다.
+model IssueReport {
+  id           Int       @id @default(autoincrement())
+  issue        CarIssue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  issueId      Int
+  reasons      String[] // 무엇이 틀렸는지 (체크박스, REPORT_REASONS의 키)
+  comment      String? // 자세한 내용 ("기타"를 고르면 필수)
+  sourceUrl    String? // 근거 링크
+  answer       String? // 운영자 답변. 있으면 공개
+  answeredAt   DateTime?
+  answeredBy   User?     @relation(fields: [answeredById], references: [id])
+  answeredById Int?
+  createdAt    DateTime  @default(now())
 
   @@index([issueId, createdAt])
 }
@@ -170,12 +190,13 @@ enum Role {
 }
 
 model User {
-  id          Int            @id @default(autoincrement())
-  email       String         @unique
-  name        String
-  picture     String?
-  role        Role
-  createdAt   DateTime       @default(now())
-  lastLoginAt DateTime       @default(now())
-  histories   IssueHistory[]
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  name          String
+  picture       String?
+  role          Role
+  createdAt     DateTime       @default(now())
+  lastLoginAt   DateTime       @default(now())
+  histories     IssueHistory[]
+  reportAnswers IssueReport[]
 }

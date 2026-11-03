@@ -40,6 +40,37 @@ export type CarIssue = {
   status: IssueStatus;
   sourceUrl: string | null;
   note: string | null;
+  /** 운영자가 답변한 제보만 (사용자 화면 GET /cars/:id) */
+  reports?: PublicReport[];
+  _count?: { reports: number };
+};
+
+// "틀린 내용 있어요" 체크박스. 서버(api/src/issues/dto/report.dto.ts)와 같은 키·문구.
+export const REPORT_REASONS = {
+  YEAR: "연식·세대가 달라요",
+  ENGINE: "엔진·미션이 달라요",
+  SYMPTOM: "증상 설명이 틀려요",
+  CHECK: "확인 방법이 틀려요",
+  SEVERITY: "심각도가 과장되거나 축소됐어요",
+  FIXED: "이미 해결됐어요 (리콜·개선품)",
+  OTHER: "기타",
+} as const;
+export type ReportReason = keyof typeof REPORT_REASONS;
+
+export type PublicReport = { id: number; reasons: ReportReason[]; comment: string | null; answer: string; answeredAt: string; createdAt: string };
+
+/** 관리 화면 제보함 (GET /issues/reports) */
+export type AdminReport = {
+  id: number;
+  issueId: number;
+  reasons: ReportReason[];
+  comment: string | null;
+  sourceUrl: string | null;
+  answer: string | null;
+  answeredAt: string | null;
+  createdAt: string;
+  issue: { id: number; title: string; carModel: { id: number; displayName: string; yearFrom: number; yearTo: number | null } };
+  answeredBy: { name: string } | null;
 };
 
 /** 관리 화면용 고질병: 반려 포함 + 변경 이력 + 지금 내가 누를 수 있는 심사 버튼 (GET /issues?carModelId=) */

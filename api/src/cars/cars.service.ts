@@ -79,7 +79,21 @@ export class CarsService {
     const car = await this.prisma.carModel.findUnique({
       where: { id },
       // 반려된 고질병은 사용자 화면에서 숨깁니다(관리 화면은 GET /issues로 전부 봄).
-      include: { issues: { where: { status: { in: PUBLIC_STATUSES } } }, powertrains: { orderBy: { id: "asc" } } },
+      // 제보는 답변이 달린 것만 공개하고(내용 그대로 노출 방지), 전체 개수는 따로 셉니다.
+      include: {
+        issues: {
+          where: { status: { in: PUBLIC_STATUSES } },
+          include: {
+            reports: {
+              where: { answer: { not: null } },
+              orderBy: { answeredAt: "desc" },
+              select: { id: true, reasons: true, comment: true, answer: true, answeredAt: true, createdAt: true },
+            },
+            _count: { select: { reports: true } },
+          },
+        },
+        powertrains: { orderBy: { id: "asc" } },
+      },
     });
     if (!car) throw new NotFoundException(`차종 ${id}번을 찾을 수 없습니다.`);
     return {
