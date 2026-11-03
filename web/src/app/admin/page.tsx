@@ -1,5 +1,5 @@
 "use client";
-// 데이터 관리: 차종(세대)·엔진 추가, 고질병 추가·검증·삭제, 본넷 점검 포인트 추가·삭제.
+// 데이터 관리: 사용자 제보 답변, 차종(세대)·엔진 추가, 고질병 추가·검증·삭제, 본넷 점검 포인트 추가·삭제.
 // 직접 찾아본 정보를 넣는 곳입니다. "검증됨"은 출처 URL이 있어야 저장됩니다(서버 규칙).
 // 구글 로그인 필요. ADMIN은 전부, EDITOR는 초안 작성까지만(검증·삭제·차종 추가 버튼이 안 보임).
 // 버튼을 숨기는 건 편의일 뿐이고, 실제로 막는 건 API(auth.guard.ts, issues.service.ts)입니다.
@@ -9,8 +9,8 @@ import { AdminLogin } from "@/components/admin-login";
 import { BonnetDiagram } from "@/components/bonnet-diagram";
 import { Card, ErrorText, Loading, SeverityText, TopBar, fieldCls } from "@/components/ui";
 import {
-  ApiError, BODY_LABEL, FUEL_LABEL, PARTS, STATUS_LABEL, TRANSMISSION_LABEL, api, loginToken, saveLoginToken, yearText,
-  type AdminIssue, type AuthUser, type CarModel, type CarReport, type Inspection, type IssueStatus, type Severity,
+  ApiError, BODY_LABEL, FUEL_LABEL, PARTS, REPORT_REASONS, STATUS_LABEL, TRANSMISSION_LABEL, api, loginToken, saveLoginToken, yearText,
+  type AdminIssue, type AdminReport, type AuthUser, type CarModel, type CarReport, type Inspection, type IssueStatus, type Severity,
 } from "@/lib/api";
 
 const btn = "rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50";
@@ -53,6 +53,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
   const [report, setReport] = useState<CarReport | null>(null);
   const [issues, setIssues] = useState<AdminIssue[]>([]);
   const [inspection, setInspection] = useState<Inspection | null>(null);
+  const [reports, setReports] = useState<AdminReport[]>([]);
   const [error, setError] = useState<string | null>(null);
   // 저장·삭제 후 이 숫자를 올리면 아래 effect들이 다시 돌아 목록을 새로 불러옵니다.
   const [reloadKey, setReloadKey] = useState(0);
@@ -65,6 +66,10 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
       },
       (err: Error) => setError(err.message),
     );
+  }, [reloadKey]);
+
+  useEffect(() => {
+    api<AdminReport[]>("/issues/reports").then(setReports, (err: Error) => setError(err.message));
   }, [reloadKey]);
 
   useEffect(() => {
@@ -125,6 +130,13 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
         </p>
         <p className="text-sm text-muted">직접 찾아본 정보를 넣고, 초안을 확인해서 &quot;검증됨&quot;으로 바꿔요.</p>
         <ErrorText message={error} />
+
+        <ReportInbox
+          reports={reports}
+          isAdmin={isAdmin}
+          onAnswer={(id, answer) => run(() => api(`/issues/reports/${id}/answer`, { method: "POST", json: { answer } }))}
+          onSelectCar={setSelectedId}
+        />
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">차종(세대) 선택</h2>
@@ -341,5 +353,81 @@ function IssueHistoryList({ history }: { history: AdminIssue["history"] }) {
         ))}
       </ol>
     </details>
+  );
+}
+
+// 제보함: 사용자가 "틀린 내용 있어요"로 보낸 것. 답변 안 한 것이 위에 옵니다.
+// 답변을 달면 사용자 리포트 화면의 그 고질병 카드 아래에 공개됩니다. 고질병 내용을 고치는 건 아래 "고질병"에서.
+function ReportInbox({
+  reports,
+  isAdmin,
+  onAnswer,
+  onSelectCar,
+}: {
+  reports: AdminReport[];
+  isAdmin: boolean;
+  onAnswer: (id: number, answer: string) => Promise<boolean>;
+  onSelectCar: (carId: number) => void;
+}) {
+  const open = reports.filter((r) => !r.answer).length;
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-bold">
+        제보함 <span className="text-sm font-medium text-muted">답변 기다리는 제보 {open}건</span>
+      </h2>
+      <p className="text-xs leading-relaxed text-muted">답변을 달면 사용자 화면의 고질병 카드 아래에 제보와 함께 공개돼요. 답변 전에는 개수만 보여요.</p>
+      {reports.length === 0 && <p className="text-sm text-body">아직 제보가 없어요.</p>}
+      {reports.map((r) => (
+        <ReportCard key={r.id} report={r} isAdmin={isAdmin} onAnswer={onAnswer} onSelectCar={onSelectCar} />
+      ))}
+    </section>
+  );
+}
+
+function ReportCard({
+  report: r,
+  isAdmin,
+  onAnswer,
+  onSelectCar,
+}: {
+  report: AdminReport;
+  isAdmin: boolean;
+  onAnswer: (id: number, answer: string) => Promise<boolean>;
+  onSelectCar: (carId: number) => void;
+}) {
+  const [answer, setAnswer] = useState(r.answer ?? "");
+  const car = r.issue.carModel;
+  return (
+    <Card className={`flex flex-col gap-2 p-4 ${r.answer ? "opacity-80" : ""}`}>
+      <p className="text-xs text-muted">
+        {car.displayName} ({yearText(car)}) · {new Date(r.createdAt).toLocaleString("ko-KR")}
+      </p>
+      <p className="text-sm font-bold">{r.issue.title}</p>
+      <p className="text-sm text-body">{r.reasons.map((key) => REPORT_REASONS[key] ?? key).join(" · ")}</p>
+      {r.comment && <p className="text-sm text-ink">“{r.comment}”</p>}
+      {r.sourceUrl && (
+        <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-accent underline">{r.sourceUrl}</a>
+      )}
+      {r.answer && (
+        <p className="text-sm text-body">
+          <strong>답변</strong> {r.answer} <span className="text-xs text-muted">({r.answeredBy?.name})</span>
+        </p>
+      )}
+      {isAdmin && (
+        <form
+          className="flex flex-col gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await onAnswer(r.id, answer);
+          }}
+        >
+          <textarea className={textareaCls} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="제보에 대한 답변 (사용자 화면에 공개돼요)" maxLength={1000} />
+          <div className="flex gap-2">
+            <button type="submit" className={btn} disabled={!answer.trim()}>{r.answer ? "답변 고치기" : "답변 등록"}</button>
+            <button type="button" className={subtleBtn} onClick={() => onSelectCar(car.id)}>이 차 고질병 보기</button>
+          </div>
+        </form>
+      )}
+    </Card>
   );
 }

@@ -1,10 +1,12 @@
 // 4. 고질병 리포트 (기획 캔버스 "4. 고질병 리포트")
 // 스펙 요약 → 매장 점검 가이드 진입 → 고질병 → 매장 체크리스트 → 공통 점검
-// 서버 컴포넌트: 세대마다 화면을 처음 방문 때 만들어 두고 재사용합니다(ISR). 체크리스트만 브라우저에서 동작.
+// 서버 컴포넌트: 세대마다 화면을 처음 방문 때 만들어 두고 재사용합니다(ISR). 체크리스트와 "틀린 내용 있어요"만 브라우저에서 동작.
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ReportChecklist } from "@/components/report-checklist";
+import { ReportIssue } from "@/components/report-issue";
 import { Card, ChevronRight, SEVERITY, SeverityText, StatusBadge, TopBar, primaryBtn, secondaryBtn } from "@/components/ui";
-import { FUEL_LABEL, TRANSMISSION_LABEL, generationsHref, yearText, type CarReport } from "@/lib/api";
+import { FUEL_LABEL, REPORT_REASONS, TRANSMISSION_LABEL, generationsHref, yearText, type CarIssue, type CarReport } from "@/lib/api";
 import { cachedApi } from "@/lib/cached";
 
 export const revalidate = 3600;
@@ -12,6 +14,21 @@ export const revalidate = 3600;
 // 빌드 때는 미리 만들지 않고(빌드에 API가 필요 없게), 첫 방문 때 만들어 저장합니다.
 export async function generateStaticParams() {
   return [];
+}
+
+// 검색 결과에 보이는 제목·설명: "더 뉴 그랜저 (2019~2022) 고질병" 같은 검색어에 걸리도록 차 이름과 고질병 제목을 넣습니다.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const car = await cachedApi<CarReport>(`/cars/${Number(id) || 0}`);
+  const name = `${car.maker} ${car.displayName} (${yearText(car)})`;
+  const issues = car.issues.map((i) => i.title).slice(0, 3).join(", ");
+  return {
+    title: `${name} 고질병·중고차 구매 체크리스트 | 중구`,
+    description: issues
+      ? `${name} 중고차를 살 때 확인할 고질병: ${issues}. 매장에서 확인하는 방법까지 알려드려요.`
+      : `${name} 중고차를 살 때 매장에서 확인할 점을 알려드려요.`,
+    alternates: { canonical: `/cars/${car.id}` },
+  };
 }
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -90,6 +107,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             ) : (
               <p className="text-xs text-[#92400E]">아직 확인 중인 정보예요. 정비소에서 한 번 더 물어보세요.</p>
             )}
+            <AnsweredReports issue={issue} />
+            <ReportIssue issueId={issue.id} />
           </article>
         ))}
       </section>
@@ -110,5 +129,28 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <Link href={back} className={secondaryBtn}>다른 연식 보기</Link>
       </section>
     </>
+  );
+}
+
+// 운영자가 답변한 제보. 답변 전 제보는 내용 없이 개수만 보여줍니다.
+function AnsweredReports({ issue }: { issue: CarIssue }) {
+  const total = issue._count?.reports ?? 0;
+  const answered = issue.reports ?? [];
+  if (total === 0) return null;
+  return (
+    <div className="flex flex-col gap-2 border-t border-line pt-2">
+      <p className="text-xs font-medium text-muted">
+        제보 {total}건{answered.length < total && ` · 확인 중 ${total - answered.length}건`}
+      </p>
+      {answered.map((r) => (
+        <div key={r.id} className="flex flex-col gap-1 rounded-[10px] bg-chip p-3 text-sm">
+          <p className="text-xs text-muted">{r.reasons.map((key) => REPORT_REASONS[key] ?? key).join(" · ")}</p>
+          {r.comment && <p className="text-body">“{r.comment}”</p>}
+          <p className="text-ink">
+            <strong className="text-accent-dark">운영자 답변</strong> {r.answer}
+          </p>
+        </div>
+      ))}
+    </div>
   );
 }

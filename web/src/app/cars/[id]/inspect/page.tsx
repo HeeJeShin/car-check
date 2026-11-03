@@ -1,6 +1,7 @@
 // 4-1. 매장 점검 가이드 (기획 캔버스 "4-1. 매장 점검 가이드")
 // ① 이 차 스펙 → 그래서 조심할 것  ② 본넷 그림 + 빨간 동그라미  ③ 시운전 순서
 // 서버 컴포넌트: 세대마다 화면을 처음 방문 때 만들어 두고 재사용합니다(ISR). 본넷 그림 선택만 브라우저에서 동작.
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BonnetPoints } from "@/components/bonnet-points";
 import { Card, TopBar, primaryBtn } from "@/components/ui";
@@ -11,6 +12,17 @@ export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return [];
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const { car } = await cachedApi<Inspection>(`/cars/${Number(id) || 0}/inspection`);
+  const name = `${car.maker} ${car.displayName} (${yearText(car)})`;
+  return {
+    title: `${name} 매장 점검 가이드 · 본넷·시운전 체크 | 중구`,
+    description: `${name} 중고차를 보러 갔을 때 본넷을 열고 볼 곳과 시운전 순서를 휴대폰 하나로 확인하세요.`,
+    alternates: { canonical: `/cars/${car.id}/inspect` },
+  };
 }
 
 export default async function InspectPage({ params }: { params: Promise<{ id: string }> }) {
