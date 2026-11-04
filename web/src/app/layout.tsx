@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { IBM_Plex_Sans_KR } from "next/font/google";
 import { SITE_URL } from "@/lib/site";
@@ -29,6 +30,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko" className={plex.variable}>
       <body className="antialiased">
         <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)]">{children}</div>
+        {/* Vercel Web Analytics: 방문자·페이지뷰·유입 경로 (쿠키 없음). Vercel 대시보드 → Analytics에서 확인 */}
+        <Analytics />
       </body>
     </html>
   );
