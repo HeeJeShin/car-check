@@ -200,3 +200,20 @@ model User {
   histories     IssueHistory[]
   reportAnswers IssueReport[]
 }
+
+// ── 방문 통계 ──
+// 화면 하나를 본 기록. 관리 화면 "방문 통계" 차트에 씁니다(stats.service.ts).
+// IP는 저장하지 않습니다. visitorHash는 "날짜 + IP + 브라우저 + 비밀값"을 섞은 해시라 그날 같은 사람인지만 셀 수 있고,
+// 날이 바뀌면 값도 바뀌어 사람을 추적할 수 없습니다.
+model PageView {
+  id          Int      @id @default(autoincrement())
+  path        String // 본 화면 주소 (/cars/226). 쿼리·해시는 뺌
+  carModelId  Int? // /cars/:id, /cars/:id/inspect 이면 그 세대 (많이 본 차종 TOP 10)
+  referrer    String? // 들어온 곳의 도메인만 (search.naver.com …). 바로 들어왔거나 사이트 안 이동이면 null
+  device      String // mobile | desktop
+  visitorHash String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([carModelId, createdAt])
+}

@@ -1,6 +1,6 @@
-import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { IBM_Plex_Sans_KR } from "next/font/google";
+import { PageViewTracker } from "@/components/page-view-tracker";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -30,8 +30,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko" className={plex.variable}>
       <body className="antialiased">
         <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)]">{children}</div>
-        {/* Vercel Web Analytics: 방문자·페이지뷰·유입 경로 (쿠키 없음). Vercel 대시보드 → Analytics에서 확인 */}
-        <Analytics />
+        {/* 방문 통계: 화면을 볼 때마다 우리 API에 기록 (관리 화면 → 방문 통계 차트) */}
+        <PageViewTracker />
       </body>
     </html>
   );

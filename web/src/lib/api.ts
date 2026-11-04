@@ -59,6 +59,16 @@ export type ReportReason = keyof typeof REPORT_REASONS;
 
 export type PublicReport = { id: number; reasons: ReportReason[]; comment: string | null; answer: string; answeredAt: string; createdAt: string };
 
+/** 관리 화면 방문 통계 (GET /stats?days=30) */
+export type VisitStats = {
+  days: number;
+  totals: { views: number; visitors: number; reports: number };
+  daily: { day: string; views: number; visitors: number }[];
+  topCars: { id: number; maker: string; displayName: string; yearFrom: number; yearTo: number | null; views: number }[];
+  referrers: { host: string; views: number }[];
+  devices: Record<string, number>;
+};
+
 /** 관리 화면 제보함 (GET /issues/reports) */
 export type AdminReport = {
   id: number;

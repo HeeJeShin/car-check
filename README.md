@@ -98,7 +98,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | `/cars/[id]` | 고질병 리포트: 엔진·미션 요약 → 고질병(검증됨 먼저, 카드마다 **"틀린 내용 있어요" 제보**와 운영자 답변) → 매장 체크리스트(브라우저에 저장) → 공통 점검 |
 | `/cars/[id]/inspect` | 매장 점검 가이드: 스펙별 주의점(DCT → 저속 꿀렁거림 등) → 본넷 그림 + 빨간 동그라미 → 시운전 순서 |
 | `/guide` | AI: 무엇부터 알아볼지, 용도별 추천 (추천 차종 → 세대 선택으로 연결) |
-| `/admin` | **구글 로그인 필요.** 제보함(답변 달기), 차종·엔진 추가, 고질병 추가·검증·삭제, 이 차 본넷 점검 포인트 추가 |
+| `/admin` | **구글 로그인 필요.** 방문 통계(일별 차트·많이 본 차종 TOP 10·들어온 곳·기기), 제보함(답변 달기), 차종·엔진 추가, 고질병 추가·검증·삭제, 이 차 본넷 점검 포인트 추가 |
 | `/robots.txt`, `/sitemap.xml` | 검색엔진용. 관리 화면만 막고, 차종·세대마다 리포트·점검 가이드 주소를 알려줌 (`NEXT_PUBLIC_SITE_URL`) |
 
 **조회 화면은 ISR**(`/cars`, `/generations/…`, `/cars/[id]`, `/cars/[id]/inspect`): 서버가 API를 불러 화면을 만들어 저장해 두고, 다음 방문자부터는 저장된 화면을 그대로 줍니다(API 호출 없음). 1시간마다 뒤에서 새로 만들고, 관리 화면에서 데이터를 고치면 바로 지워져 다음 방문 때 반영됩니다(`web/src/app/actions.ts`). 체크리스트·필터처럼 움직이는 부분만 브라우저 컴포넌트(`web/src/components/`)입니다.
@@ -138,6 +138,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | DELETE | `/issues/:id` | 삭제(이력도 같이 지워짐. 틀린 정보는 반려 권장) 🔒ADMIN |
 | POST · DELETE | `/inspection-points`, `/inspection-points/:id` | 본넷 점검 포인트 추가 🔒ADMIN·EDITOR, 삭제 🔒ADMIN |
 | POST | `/issues/:id/reports` | 사용자 제보 `{"reasons":["FIXED"],"comment":"...","sourceUrl":"..."}` (로그인 없이, IP당 1시간 5건·하루 20건) |
+| POST · GET | `/stats/view`, `/stats?days=30` | 방문 기록(화면마다 자동, 로그인 없이·IP 저장 안 함·봇과 관리 화면 제외) · 방문 통계 🔒ADMIN·EDITOR |
 | GET · POST | `/issues/reports`, `/issues/reports/:id/answer` | 제보함 🔒ADMIN·EDITOR, 답변 달기 🔒ADMIN (답변이 달린 제보만 사용자 화면에 공개) |
 
 🔒 표시는 `Authorization: Bearer <로그인 토큰>`이 필요합니다. API 문서(`/docs`)의 Authorize 버튼에 토큰을 넣으면 바로 시험할 수 있어요.
