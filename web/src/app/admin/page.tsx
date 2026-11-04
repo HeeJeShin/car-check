@@ -1,5 +1,5 @@
 "use client";
-// 데이터 관리: 사용자 제보 답변, 차종(세대)·엔진 추가, 고질병 추가·검증·삭제, 본넷 점검 포인트 추가·삭제.
+// 데이터 관리: 방문 통계, 사용자 제보 답변, 차종(세대)·엔진 추가, 고질병 추가·검증·삭제, 본넷 점검 포인트 추가·삭제.
 // 직접 찾아본 정보를 넣는 곳입니다. "검증됨"은 출처 URL이 있어야 저장됩니다(서버 규칙).
 // 구글 로그인 필요. ADMIN은 전부, EDITOR는 초안 작성까지만(검증·삭제·차종 추가 버튼이 안 보임).
 // 버튼을 숨기는 건 편의일 뿐이고, 실제로 막는 건 API(auth.guard.ts, issues.service.ts)입니다.
@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { refreshPublicPages } from "@/app/actions";
 import { AdminLogin } from "@/components/admin-login";
 import { BonnetDiagram } from "@/components/bonnet-diagram";
+import { VisitStats } from "@/components/visit-stats";
 import { Card, ErrorText, Loading, SeverityText, TopBar, fieldCls } from "@/components/ui";
 import {
   ApiError, BODY_LABEL, FUEL_LABEL, PARTS, REPORT_REASONS, STATUS_LABEL, TRANSMISSION_LABEL, api, loginToken, saveLoginToken, yearText,
@@ -130,6 +131,8 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
         </p>
         <p className="text-sm text-muted">직접 찾아본 정보를 넣고, 초안을 확인해서 &quot;검증됨&quot;으로 바꿔요.</p>
         <ErrorText message={error} />
+
+        <VisitStats />
 
         <ReportInbox
           reports={reports}
