@@ -125,7 +125,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
         title="데이터 관리"
         right={<button type="button" onClick={onLogout} className="min-h-11 underline">로그아웃</button>}
       />
-      <div className="flex flex-col gap-8 p-5">
+      <div className="flex flex-col gap-8 p-5 lg:p-8">
         <p className="text-sm text-muted">
           <strong className="text-ink">{user.name}</strong> ({user.email}) · {isAdmin ? "관리자: 모든 수정·검증·삭제" : "에디터: 초안 작성·수정만 (검증·삭제는 관리자)"}
         </p>
@@ -134,6 +134,8 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
 
         <VisitStats />
 
+        {/* PC: 왼쪽 제보함, 오른쪽 고질병 관리. 휴대폰: 위에서 아래로 */}
+        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
         <ReportInbox
           reports={reports}
           isAdmin={isAdmin}
@@ -141,6 +143,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
           onSelectCar={setSelectedId}
         />
 
+        <div className="flex flex-col gap-8">
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">차종(세대) 선택</h2>
           <select className={fieldCls} value={selectedId ?? ""} onChange={(e) => setSelectedId(Number(e.target.value))}>
@@ -199,6 +202,8 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
         </section>
 
         {isAdmin && <CarForm onSubmit={(body) => run(() => api("/cars", { method: "POST", json: body }))} />}
+        </div>
+        </div>
       </div>
     </>
   );

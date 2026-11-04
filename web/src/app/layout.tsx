@@ -25,11 +25,12 @@ export const metadata: Metadata = {
 };
 
 // 기획대로 모바일 화면 기준. 넓은 화면에서는 가운데 한 줄로 보여줍니다.
+// 관리 화면만 예외: .admin-wide가 들어 있으면 PC 너비까지 넓힘 (app/admin/layout.tsx)
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko" className={plex.variable}>
       <body className="antialiased">
-        <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)]">{children}</div>
+        <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)] has-[.admin-wide]:max-w-6xl">{children}</div>
         {/* 방문 통계: 화면을 볼 때마다 우리 API에 기록 (관리 화면 → 방문 통계 차트) */}
         <PageViewTracker />
       </body>

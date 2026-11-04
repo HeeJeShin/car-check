@@ -2,7 +2,7 @@
 // 관리 화면 "방문 통계": 일별 방문자·페이지뷰(선 2개), 많이 본 차종 TOP 10, 들어온 곳(가로 막대), 기기(숫자).
 // 기록은 우리 API에 쌓입니다(api/src/stats/stats.ts). IP는 저장하지 않아요.
 // 색: 방문자 #2a78d6(파랑), 페이지뷰 #eb6834(주황) — 색약·대비 검사 통과. 글자는 색 대신 본문 글자색.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, ErrorText } from "@/components/ui";
 import { api, yearText, type VisitStats as Stats } from "@/lib/api";
 
@@ -53,10 +53,12 @@ export function VisitStats() {
         <p className="text-sm text-muted">불러오는 중…</p>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-5">
             <StatTile label="방문자" value={fmt(stats.totals.visitors)} />
             <StatTile label="페이지뷰" value={fmt(stats.totals.views)} />
             <StatTile label="제보" value={fmt(stats.totals.reports)} />
+            <StatTile label="휴대폰" value={pct(mobile)} sub={`${fmt(mobile)}회`} />
+            <StatTile label="PC" value={pct(desktop)} sub={`${fmt(desktop)}회`} />
           </div>
 
           <Card className="flex flex-col gap-2 p-4">
@@ -79,6 +81,7 @@ export function VisitStats() {
             </details>
           </Card>
 
+          <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
           <Card className="flex flex-col gap-2 p-4">
             <h3 className="text-sm font-bold">많이 본 차종 TOP 10 <span className="font-normal text-muted">(리포트·점검 가이드 페이지뷰)</span></h3>
             <BarList
@@ -91,10 +94,6 @@ export function VisitStats() {
             <h3 className="text-sm font-bold">들어온 곳</h3>
             <BarList empty="아직 방문이 없어요." rows={stats.referrers.map((r) => ({ key: r.host, label: r.host, value: r.views }))} />
           </Card>
-
-          <div className="grid grid-cols-2 gap-2">
-            <StatTile label="휴대폰" value={pct(mobile)} sub={`${fmt(mobile)}회`} />
-            <StatTile label="PC" value={pct(desktop)} sub={`${fmt(desktop)}회`} />
           </div>
         </>
       )}
@@ -116,7 +115,16 @@ function StatTile({ label, value, sub }: { label: string; value: string; sub?: s
 // 키보드: 그래프에 포커스 후 ←/→로 날짜 이동.
 function DailyChart({ daily }: { daily: Stats["daily"] }) {
   const [active, setActive] = useState<number | null>(null);
-  const W = 320, H = 150, L = 28, R = 56, T = 10, B = 22; // 오른쪽 여백은 선 끝 이름표 자리
+  const box = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(320);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setWidth(Math.max(280, Math.round(entry.contentRect.width))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const W = width, H = width >= 640 ? 220 : 160, L = 32, R = 72, T = 10, B = 22; // 오른쪽 여백은 선 끝 이름표 자리
   const pw = W - L - R, ph = H - T - B;
   const max = Math.max(1, ...daily.map((d) => Math.max(d.views, d.visitors)));
   const nice = Math.max(4, niceMax(max)); // 방문이 적을 때도 0·2·4 눈금
@@ -150,7 +158,7 @@ function DailyChart({ daily }: { daily: Stats["daily"] }) {
           </span>
         ))}
       </div>
-      <div className="relative">
+      <div ref={box} className="relative">
         <svg
           viewBox={`0 0 ${W} ${H}`}
           className="w-full touch-none select-none outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -170,12 +178,12 @@ function DailyChart({ daily }: { daily: Stats["daily"] }) {
           {ticks.map((t) => (
             <g key={t}>
               <line x1={L} x2={L + pw} y1={y(t)} y2={y(t)} stroke="var(--color-line)" strokeWidth={1} />
-              <text x={L - 4} y={y(t) + 3} textAnchor="end" fontSize={9} fill="var(--color-muted, #6b7280)">{fmt(t)}</text>
+              <text x={L - 4} y={y(t) + 3} textAnchor="end" fontSize={11} fill="var(--color-muted, #6b7280)">{fmt(t)}</text>
             </g>
           ))}
           {/* 날짜: 처음·가운데·끝만 */}
           {[0, Math.floor(last / 2), last].filter((v, i, arr) => arr.indexOf(v) === i).map((i) => (
-            <text key={i} x={x(i)} y={H - 6} textAnchor="middle" fontSize={9} fill="var(--color-muted, #6b7280)">{shortDay(daily[i].day)}</text>
+            <text key={i} x={x(i)} y={H - 6} textAnchor="middle" fontSize={11} fill="var(--color-muted, #6b7280)">{shortDay(daily[i].day)}</text>
           ))}
           {/* 선 2개: 페이지뷰를 먼저 그리고 방문자를 위에 (값이 같을 때 방문자 선이 가려지지 않게) */}
           {[...SERIES].reverse().map((s) => (
@@ -191,7 +199,7 @@ function DailyChart({ daily }: { daily: Stats["daily"] }) {
           ))}
           {/* 선 끝 이름표 (글자는 본문 색) */}
           {SERIES.map((s, i) => (
-            <text key={s.key} x={x(last) + 6} y={endY[i] + 3} fontSize={9} fill="var(--color-ink, #111827)">
+            <text key={s.key} x={x(last) + 6} y={endY[i] + 3} fontSize={11} fill="var(--color-ink, #111827)">
               {s.label} {fmt(daily[last]?.[s.key] ?? 0)}
             </text>
           ))}
