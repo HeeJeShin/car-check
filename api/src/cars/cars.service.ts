@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PUBLIC_STATUSES } from "../issues/issues.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCarModelDto } from "./dto/create-car-model.dto";
+import { EV_CHECKS } from "./ev-checks";
 import { GENERAL_CHECKS } from "./general-checks";
 import { TRANSMISSION_GUIDE, driveSteps, powertrainTips } from "./powertrain-tips";
 
@@ -104,7 +105,7 @@ export class CarsService {
     };
   }
 
-  /** "매장 점검 가이드" 화면: 스펙 주의점 + 본넷 포인트(공통 + 이 차) + 시운전 */
+  /** "매장 점검 가이드" 화면: 스펙 주의점 + 전기차 점검(전기차만) + 본넷 포인트(공통 + 이 차) + 시운전 */
   async inspection(id: number) {
     const car = await this.prisma.carModel.findUnique({
       where: { id },
@@ -113,6 +114,7 @@ export class CarsService {
     if (!car) throw new NotFoundException(`차종 ${id}번을 찾을 수 없습니다.`);
     // 전기차만 있는 세대면 엔진오일·벨트 같은 내연기관 전용 포인트는 뺍니다.
     const evOnly = car.powertrains.length > 0 && car.powertrains.every((p) => p.fuel === "EV");
+    const hasEv = car.powertrains.some((p) => p.fuel === "EV");
     const points = await this.prisma.inspectionPoint.findMany({
       where: { OR: [{ carModelId: null }, { carModelId: id }], ...(evOnly && { iceOnly: false }) },
     });
@@ -125,6 +127,8 @@ export class CarsService {
       car: { id: car.id, maker: car.maker, name: car.name, displayName: car.displayName, yearFrom: car.yearFrom, yearTo: car.yearTo },
       powertrains: car.powertrains,
       tips: powertrainTips(car.powertrains),
+      // 전기차는 본넷 대신 차 밑 배터리·배터리 상태를 봅니다
+      evChecks: hasEv ? EV_CHECKS : [],
       points: ordered.map((p, i) => ({ ...p, no: i + 1, mine: p.carModelId !== null })),
       driveSteps: driveSteps(car.powertrains),
       transmissionGuide: TRANSMISSION_GUIDE.map((g) => ({ ...g, mine: mine.has(g.transmission) })),
