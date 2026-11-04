@@ -104,6 +104,8 @@ export type Inspection = {
   car: Pick<CarModel, "id" | "maker" | "name" | "displayName" | "yearFrom" | "yearTo">;
   powertrains: Powertrain[];
   tips: Tip[];
+  /** 전기차 점검 (차 밑 배터리 팩, SOH 진단 …). 전기차 엔진이 없는 세대면 빈 배열 */
+  evChecks: { title: string; how: string; bad: string }[];
   points: InspectionPoint[];
   driveSteps: { title: string; how: string; focus: boolean }[];
   transmissionGuide: { transmission: Transmission; label: string; feel: string; mine: boolean }[];

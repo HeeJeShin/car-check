@@ -28,6 +28,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function InspectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const data = await cachedApi<Inspection>(`/cars/${Number(id) || 0}/inspection`);
+  const hasEv = data.evChecks.length > 0;
+  const steps = [
+    ...(hasEv ? [{ href: "#ev", label: "차 밑·배터리" }] : []),
+    { href: "#bonnet", label: "본넷 열기" },
+    { href: "#drive", label: "시운전" },
+  ];
   const { car } = data;
   const back = `/cars/${car.id}`;
 
@@ -62,10 +68,33 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
         </div>
 
         <nav aria-label="점검 순서" className="flex gap-1.5">
-          <a href="#bonnet" className="flex-1 border-b-2 border-ink py-3 text-center text-sm font-bold">① 본넷 열기</a>
-          <a href="#drive" className="flex-1 border-b-2 border-line py-3 text-center text-sm font-medium text-muted">② 시운전</a>
+          {steps.map((s, i) => (
+            <a key={s.href} href={s.href} className={`flex-1 border-b-2 py-3 text-center text-sm ${i === 0 ? "border-ink font-bold" : "border-line font-medium text-muted"}`}>
+              {"①②③"[i]} {s.label}
+            </a>
+          ))}
         </nav>
       </section>
+
+      {hasEv && (
+        <section id="ev" className="flex scroll-mt-20 flex-col gap-3 p-5">
+          <h2 className="text-lg font-bold">전기차는 차 밑과 배터리를 먼저</h2>
+          <p className="rounded-[10px] bg-[#FEF3C7] px-3 py-2.5 text-[13px] leading-relaxed text-[#92400E]">
+            전기차는 본넷 아래에 엔진이 없어요. 대신 차 바닥에 깔린 배터리가 가장 비싼 부품이라, 리프트로 띄워서 보고 배터리 상태 진단을 받아 보세요.
+          </p>
+          <ol className="flex flex-col gap-2.5">
+            {data.evChecks.map((c, i) => (
+              <li key={c.title}>
+                <Card className="flex flex-col gap-1.5 p-4">
+                  <p className="text-[15px] font-bold">{i + 1}. {c.title}</p>
+                  <p className="text-sm leading-relaxed text-body">{c.how}</p>
+                  <p className="text-sm leading-relaxed text-[#B91C1C]"><strong>이러면 주의</strong> {c.bad}</p>
+                </Card>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <section id="bonnet" className="flex scroll-mt-20 flex-col gap-3 p-5">
         <h2 className="text-lg font-bold">본넷 열고 볼 곳</h2>

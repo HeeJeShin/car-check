@@ -34,6 +34,10 @@ test("차종을 찾아 리포트와 점검 가이드까지 본다", async ({ pag
   await expect(page.getByRole("button", { name: /^\d+번 냉각수$/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /^\d+번 엔진오일$/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^\d+번 벨트$/ })).toHaveCount(0);
+  // 전기차는 본넷 대신 차 밑 배터리·배터리 상태를 먼저 봄
+  await expect(page.getByRole("heading", { name: "전기차는 차 밑과 배터리를 먼저" })).toBeVisible();
+  await expect(page.getByText("차 밑 배터리 팩 (리프트로 띄워서)")).toBeVisible();
+  await expect(page.getByRole("link", { name: /차 밑·배터리/ })).toBeVisible();
 });
 
 test("없는 차종 주소는 '찾는 차가 없어요'", async ({ page }) => {
