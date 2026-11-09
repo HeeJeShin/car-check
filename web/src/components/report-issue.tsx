@@ -54,7 +54,7 @@ export function ReportIssue({ issueId }: { issueId: number }) {
       <div className="flex flex-col gap-2">
         {REASONS.map(([key, label]) => (
           <label key={key} className="flex items-center gap-2 text-sm text-body">
-            <input type="checkbox" checked={reasons.includes(key)} onChange={() => toggle(key)} className="h-4 w-4 accent-[var(--color-accent)]" />
+            <input type="checkbox" checked={reasons.includes(key)} onChange={() => toggle(key)} className="h-4 w-4 accent-primary" />
             {label}
           </label>
         ))}
@@ -65,7 +65,7 @@ export function ReportIssue({ issueId }: { issueId: number }) {
         maxLength={1000}
         rows={3}
         placeholder={reasons.includes("OTHER") ? "어떤 내용이 틀렸는지 적어주세요 (필수)" : "자세한 내용 (선택) 예: 2022년식부터 개선품이 들어갔어요"}
-        className="w-full rounded-xl border border-field bg-white p-3 text-[15px] outline-none focus:border-accent"
+        className="w-full rounded-xl border border-field bg-white p-3 text-[15px] outline-none focus:border-primary"
       />
       <input
         value={sourceUrl}
@@ -75,7 +75,7 @@ export function ReportIssue({ issueId }: { issueId: number }) {
         placeholder="근거 링크 (선택) https://"
         className={fieldCls}
       />
-      {error && <p className="text-sm text-[#B91C1C]">{error}</p>}
+      {error && <p className="text-sm text-danger-text">{error}</p>}
       <div className="flex gap-2">
         <button type="button" onClick={() => setOpen(false)} className="flex-1 rounded-xl border border-field bg-white p-3 text-sm font-medium">
           취소
@@ -83,7 +83,7 @@ export function ReportIssue({ issueId }: { issueId: number }) {
         <button
           type="submit"
           disabled={sending || reasons.length === 0 || needsComment}
-          className="flex-1 rounded-xl bg-accent p-3 text-sm font-bold text-white disabled:opacity-50"
+          className="flex-1 rounded-xl bg-primary p-3 text-sm font-bold text-white hover:bg-primary-hover disabled:opacity-50"
         >
           {sending ? "보내는 중…" : "제보 보내기"}
         </button>

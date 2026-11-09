@@ -3,7 +3,8 @@
 // AI가 꺼져 있어도(키 없음) 화면은 뜨고, 위에 안내만 보여줍니다.
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Card, ErrorText, Pill, TopBar, fieldCls, primaryBtn } from "@/components/ui";
+import { PageBar } from "@/components/page-bar";
+import { Card, ErrorText, Pill, fieldCls, primaryBtn } from "@/components/ui";
 import { api, generationsHref, type AiMode, type RecommendResult } from "@/lib/api";
 
 const MODE_TEXT: Record<Exclude<AiMode, "gemini">, string> = {
@@ -27,11 +28,11 @@ export default function GuidePage() {
 
   return (
     <>
-      <TopBar back="/" backLabel="처음으로" right={<span className="rounded-md bg-accent-soft px-2 py-1 text-xs font-medium text-accent">AI 가이드</span>} />
+      <PageBar back="/" backLabel="처음으로" title="AI 가이드" />
       <section className="flex flex-col gap-3.5 bg-white px-5 pt-7 pb-0">
         <h1 className="text-2xl font-bold tracking-tight">아직 차를 못 정했어도 괜찮아요</h1>
         <p className="text-sm leading-relaxed text-body">무엇부터 알아볼지, 나에게 맞는 차가 뭔지 AI에게 물어보세요.</p>
-        {mode && mode !== "gemini" && <p className="rounded-[10px] bg-[#FEF3C7] p-3 text-[13px] leading-relaxed text-[#92400E]">{MODE_TEXT[mode]}</p>}
+        {mode && mode !== "gemini" && <p className="rounded-[10px] bg-warning-soft p-3 text-[13px] leading-relaxed text-warning">{MODE_TEXT[mode]}</p>}
         <ErrorText message={statusError} />
         <div role="tablist" className="flex gap-1.5">
           {([["start", "무엇부터 볼까요?"], ["recommend", "용도별 추천"]] as const).map(([key, label]) => (
@@ -90,7 +91,7 @@ function StartTab({ disabled }: { disabled: boolean }) {
             onChange={(e) => setQuestion(e.target.value)}
             maxLength={500}
             placeholder="예: 차를 하나도 모르는데 첫 중고차 사려면 뭐부터 알아봐야 해요?"
-            className="h-24 resize-none rounded-xl border border-field bg-white px-3.5 py-3 text-[15px] outline-none focus:border-accent"
+            className="h-24 resize-none rounded-xl border border-field bg-white px-3.5 py-3 text-[15px] outline-none focus:border-primary"
           />
         </label>
         <button className={primaryBtn} disabled={disabled || loading || !question.trim()}>{loading ? "생각 중…" : "물어보기"}</button>
@@ -98,7 +99,7 @@ function StartTab({ disabled }: { disabled: boolean }) {
       <ErrorText message={error} />
       {answer && (
         <Card className="flex flex-col gap-2 p-4">
-          <span className="text-xs font-bold text-accent">AI 답변</span>
+          <span className="text-xs font-bold text-primary">AI 답변</span>
           <p className="text-sm leading-7 whitespace-pre-wrap text-body">{answer}</p>
         </Card>
       )}
@@ -164,9 +165,9 @@ function RecommendTab({ disabled }: { disabled: boolean }) {
                 <span className="text-[13px] text-muted">{car.yearRange}</span>
               </div>
               <p className="text-sm leading-relaxed text-body">{car.why}</p>
-              <p className="text-[13px] leading-relaxed text-[#9A3412]">주의: {car.watchOut}</p>
+              <p className="text-[13px] leading-relaxed text-caution-strong">주의: {car.watchOut}</p>
               {car.carModels.length > 0 ? (
-                <Link href={generationsHref(car.carModels[0].maker, car.carModels[0].name)} className="py-2 text-sm font-medium text-accent">
+                <Link href={generationsHref(car.carModels[0].maker, car.carModels[0].name)} className="py-2 text-sm font-medium text-primary">
                   이 차 고질병 보기 →
                 </Link>
               ) : (

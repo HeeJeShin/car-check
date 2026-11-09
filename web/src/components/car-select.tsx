@@ -2,7 +2,9 @@
 // 차종 선택 화면의 움직이는 부분(검색·제조사 탭·차 종류 필터). 차종 목록은 서버가 미리 받아서 넘겨줍니다.
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Pill, TopBar } from "@/components/ui";
+import { PageBar } from "@/components/page-bar";
+import { SelectCard } from "@/components/select-card";
+import { Pill } from "@/components/ui";
 import { BODY_LABEL, generationsHref, type BodyType, type ModelCard } from "@/lib/api";
 
 // 국산 제조사는 각자 탭, 나머지는 "수입" 탭 하나로 묶습니다.
@@ -33,13 +35,13 @@ export function CarSelect({ models }: { models: ModelCard[] }) {
 
   return (
     <>
-      <TopBar back="/" backLabel="처음으로" right="1 / 3 단계" />
-      <section className="flex flex-col gap-4 bg-white px-5 pt-7 pb-4">
-        <h1 className="text-2xl font-bold tracking-tight">어떤 차를 사려고 하세요?</h1>
+      <PageBar back="/" backLabel="처음으로" title="차종 선택" step="1/3" />
+      <SelectCard>
+        <h1 className="mb-2 text-2xl leading-snug font-bold tracking-tight">어떤 차를 <br />사려고 하세요?</h1>
         <label className="flex flex-col gap-1.5">
           <span className="text-[13px] text-muted">차 이름으로 찾기</span>
-          <span className="flex h-12 items-center gap-2 rounded-xl border border-field bg-white px-3.5 focus-within:border-accent">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6270" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <span className="flex h-12 items-center gap-2 rounded-xl border border-field bg-white px-3.5 focus-within:border-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-4-4" />
             </svg>
@@ -60,30 +62,29 @@ export function CarSelect({ models }: { models: ModelCard[] }) {
               type="button"
               aria-pressed={body === b}
               onClick={() => setBody(b)}
-              className={`min-h-10 rounded-lg px-3 text-[13px] ${body === b ? "bg-accent-soft font-bold text-accent" : "bg-chip font-medium text-body"}`}
+              className={`min-h-10 rounded-lg px-3 text-[13px] ${body === b ? "bg-primary-soft font-bold text-primary" : "bg-chip font-medium text-body"}`}
             >
               {b === "ALL" ? "전체" : BODY_LABEL[b]}
             </button>
           ))}
         </div>
-      </section>
 
-      <section className="flex flex-col gap-3 p-5">
-        <p className="text-sm font-bold">
+        <p className="mt-3 text-sm font-bold">
           {keyword ? `'${q.trim()}' 검색 결과` : `${tab} 차종`}
           {body !== "ALL" && ` · ${BODY_LABEL[body]}`} <span className="font-medium text-muted">{shown.length}개</span>
         </p>
         <div className="grid grid-cols-2 gap-3">
           {shown.map((m) => (
-            <Link key={`${m.maker}/${m.name}`} href={generationsHref(m.maker, m.name)} className="flex flex-col gap-1 rounded-[14px] border border-line bg-white p-3.5 hover:border-accent">
+            <Link key={`${m.maker}/${m.name}`} href={generationsHref(m.maker, m.name)} className="flex flex-col gap-1 rounded-[14px] border border-line bg-white p-3.5 hover:border-primary">
               <span className="text-base font-bold">{tabOf(m.maker) === "수입" ? `${m.maker} ${m.name}` : m.name}</span>
               <span className="text-xs text-muted">{BODY_LABEL[m.bodyType]} · 세대 {m.generations}개</span>
             </Link>
           ))}
         </div>
         {shown.length === 0 && <p className="rounded-[14px] bg-white p-4 text-sm text-body">찾는 차가 아직 없어요.</p>}
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">찾는 차가 없나요? 고질병 데이터는 인기 차종부터 계속 늘려가고 있어요.</p>
-      </section>
+        <p className="mt-2 text-[13px] leading-relaxed break-keep text-muted">찾는 차가 없나요? 고질병 데이터는 인기 차종부터 계속 늘려가고 있어요.</p>
+        <Link href="/guide" className="mt-2 flex min-h-11 items-center justify-center text-sm font-bold underline hover:text-primary">아직 차를 못 정했어요</Link>
+      </SelectCard>
     </>
   );
 }

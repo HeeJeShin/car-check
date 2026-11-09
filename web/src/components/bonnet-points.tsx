@@ -23,12 +23,12 @@ export function BonnetPoints({ points }: { points: InspectionPoint[] }) {
               <span className="flex items-center gap-2.5">
                 <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-full text-[13px] font-bold ${on ? "bg-danger text-white" : "border-2 border-danger text-danger"}`}>{p.no}</span>
                 <span className="text-[15px] font-bold">{p.title}</span>
-                {p.mine && <span className="rounded-md bg-[#FEE2E2] px-1.5 py-0.5 text-[11px] font-bold text-[#B91C1C]">이 차 포인트</span>}
+                {p.mine && <span className="rounded-md bg-danger-soft px-1.5 py-0.5 text-[11px] font-bold text-danger-text">이 차 포인트</span>}
               </span>
               {on && (
                 <span className="flex flex-col gap-1.5 pt-2.5 pl-[38px]">
                   <span className="text-sm leading-relaxed text-body"><strong className="text-ink">보는 법</strong> {p.look}</span>
-                  <span className="text-sm leading-relaxed text-[#B91C1C]"><strong>이러면 주의</strong> {p.bad}</span>
+                  <span className="text-sm leading-relaxed text-danger-text"><strong>이러면 주의</strong> {p.bad}</span>
                 </span>
               )}
             </button>

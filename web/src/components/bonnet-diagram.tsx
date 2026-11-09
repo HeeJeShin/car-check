@@ -42,7 +42,7 @@ export function BonnetDiagram({ points, selected, onSelect }: { points: Inspecti
  * 위쪽이 앞유리(와이퍼), 아래쪽이 범퍼. 장식이라 스크린리더에서는 숨깁니다.
  * 사진을 그대로 쓰지 않는 이유: 매물 사이트 사진은 저작권이 있어서.
  */
-function EngineBay() {
+export function EngineBay() {
   return (
     <svg viewBox="0 0 400 240" className="absolute inset-0 h-full w-full" aria-hidden="true">
       <defs>

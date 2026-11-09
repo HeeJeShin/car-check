@@ -161,7 +161,7 @@ function DailyChart({ daily }: { daily: Stats["daily"] }) {
       <div ref={box} className="relative">
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="w-full touch-none select-none outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="w-full touch-none select-none outline-none focus-visible:ring-2 focus-visible:ring-primary"
           role="img"
           aria-label={`일별 방문자와 페이지뷰, 최근 ${daily.length}일`}
           tabIndex={0}

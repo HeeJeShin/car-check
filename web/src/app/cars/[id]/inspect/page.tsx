@@ -4,7 +4,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BonnetPoints } from "@/components/bonnet-points";
-import { Card, TopBar, primaryBtn } from "@/components/ui";
+import { PageBar } from "@/components/page-bar";
+import { Card, primaryBtn } from "@/components/ui";
 import { TRANSMISSION_LABEL, yearText, type Inspection } from "@/lib/api";
 import { cachedApi } from "@/lib/cached";
 
@@ -39,7 +40,7 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <TopBar back={back} backLabel="리포트로 돌아가기" title="매장 점검 가이드" />
+      <PageBar back={back} backLabel="리포트로 돌아가기" title="매장 점검 가이드" />
 
       <section className="flex flex-col gap-3.5 bg-white px-5 pt-6 pb-5">
         <span className="text-[13px] font-medium text-muted">{car.maker} · {car.displayName} ({yearText(car)})</span>
@@ -58,7 +59,7 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
               <p className="text-sm font-bold">그래서 이 차는 이런 걸 조심하세요</p>
               {data.tips.map((t) => (
                 <div key={t.text} className="flex items-start gap-2.5">
-                  <span className={`flex-none rounded-md px-1.5 py-0.5 text-xs font-bold text-white ${t.tag === "미션" ? "bg-danger" : "bg-[#C2410C]"}`}>{t.tag}</span>
+                  <span className={`flex-none rounded-md px-1.5 py-0.5 text-xs font-bold text-white ${t.tag === "미션" ? "bg-danger" : "bg-caution"}`}>{t.tag}</span>
                   <p className="text-sm leading-relaxed text-body">{t.text}</p>
                 </div>
               ))}
@@ -79,7 +80,7 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
       {hasEv && (
         <section id="ev" className="flex scroll-mt-20 flex-col gap-3 p-5">
           <h2 className="text-lg font-bold">전기차는 차 밑과 배터리를 먼저</h2>
-          <p className="rounded-[10px] bg-[#FEF3C7] px-3 py-2.5 text-[13px] leading-relaxed text-[#92400E]">
+          <p className="rounded-[10px] bg-warning-soft px-3 py-2.5 text-[13px] leading-relaxed text-warning">
             전기차는 본넷 아래에 엔진이 없어요. 대신 차 바닥에 깔린 배터리가 가장 비싼 부품이라, 리프트로 띄워서 보고 배터리 상태 진단을 받아 보세요.
           </p>
           <ol className="flex flex-col gap-2.5">
@@ -88,7 +89,7 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
                 <Card className="flex flex-col gap-1.5 p-4">
                   <p className="text-[15px] font-bold">{i + 1}. {c.title}</p>
                   <p className="text-sm leading-relaxed text-body">{c.how}</p>
-                  <p className="text-sm leading-relaxed text-[#B91C1C]"><strong>이러면 주의</strong> {c.bad}</p>
+                  <p className="text-sm leading-relaxed text-danger-text"><strong>이러면 주의</strong> {c.bad}</p>
                 </Card>
               </li>
             ))}
@@ -98,7 +99,7 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
 
       <section id="bonnet" className="flex scroll-mt-20 flex-col gap-3 p-5">
         <h2 className="text-lg font-bold">본넷 열고 볼 곳</h2>
-        <p className="rounded-[10px] bg-[#FEF3C7] px-3 py-2.5 text-[13px] leading-relaxed text-[#92400E]">시동을 끄고 엔진이 식은 뒤에 보세요. 냉각수 캡은 뜨거울 때 절대 열지 마세요.</p>
+        <p className="rounded-[10px] bg-warning-soft px-3 py-2.5 text-[13px] leading-relaxed text-warning">시동을 끄고 엔진이 식은 뒤에 보세요. 냉각수 캡은 뜨거울 때 절대 열지 마세요.</p>
         <BonnetPoints points={data.points} />
       </section>
 
@@ -109,7 +110,7 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
             <li key={s.title} className={`flex flex-col gap-1 rounded-[14px] bg-white p-3.5 ${s.focus ? "border-2 border-danger" : "border border-line"}`}>
               <span className="flex items-center gap-2">
                 <span className="text-[15px] font-bold">{i + 1}. {s.title}</span>
-                {s.focus && <span className="rounded-md bg-[#FEE2E2] px-1.5 py-0.5 text-[11px] font-bold text-[#B91C1C]">이 차 포인트</span>}
+                {s.focus && <span className="rounded-md bg-danger-soft px-1.5 py-0.5 text-[11px] font-bold text-danger-text">이 차 포인트</span>}
               </span>
               <span className="text-sm leading-relaxed text-body">{s.how}</span>
             </li>
@@ -120,8 +121,8 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
           <p className="border-b border-line px-3.5 py-3 text-sm font-bold">미션 종류별로 느껴볼 것</p>
           <dl className="grid grid-cols-[76px_minmax(0,1fr)] text-[13px] leading-normal">
             {data.transmissionGuide.map((g) => (
-              <div key={g.transmission} className={`contents ${g.mine ? "[&>*]:bg-[#FEF2F2]" : ""}`}>
-                <dt className={`border-b border-chip px-3.5 py-2.5 font-bold ${g.mine ? "text-[#B91C1C]" : ""}`}>{g.label}</dt>
+              <div key={g.transmission} className={`contents ${g.mine ? "[&>*]:bg-danger-tint" : ""}`}>
+                <dt className={`border-b border-chip px-3.5 py-2.5 font-bold ${g.mine ? "text-danger-text" : ""}`}>{g.label}</dt>
                 <dd className={`border-b border-chip px-3.5 py-2.5 ${g.mine ? "text-ink" : "text-body"}`}>{g.feel}</dd>
               </div>
             ))}
