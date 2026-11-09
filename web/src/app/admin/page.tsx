@@ -8,15 +8,16 @@ import { refreshPublicPages } from "@/app/actions";
 import { AdminLogin } from "@/components/admin-login";
 import { BonnetDiagram } from "@/components/bonnet-diagram";
 import { VisitStats } from "@/components/visit-stats";
-import { Card, ErrorText, Loading, SeverityText, TopBar, fieldCls } from "@/components/ui";
+import { PageBar } from "@/components/page-bar";
+import { Card, ErrorText, Loading, SeverityText, fieldCls } from "@/components/ui";
 import {
   ApiError, BODY_LABEL, FUEL_LABEL, PARTS, REPORT_REASONS, STATUS_LABEL, TRANSMISSION_LABEL, api, loginToken, saveLoginToken, yearText,
   type AdminIssue, type AdminReport, type AuthUser, type CarModel, type CarReport, type Inspection, type IssueStatus, type Severity,
 } from "@/lib/api";
 
-const btn = "rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50";
+const btn = "rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-hover disabled:opacity-50";
 const subtleBtn = "rounded-lg border border-field bg-white px-3 py-1.5 text-sm";
-const textareaCls = "h-16 w-full rounded-xl border border-field bg-white px-3.5 py-2.5 text-sm outline-none focus:border-accent";
+const textareaCls = "h-16 w-full rounded-xl border border-field bg-white px-3.5 py-2.5 text-sm outline-none focus:border-primary";
 
 export default function AdminPage() {
   // undefined = 저장된 토큰 확인 중, null = 로그인 안 됨
@@ -39,7 +40,7 @@ export default function AdminPage() {
   if (!user) {
     return (
       <>
-        <TopBar back="/" backLabel="처음으로" title="데이터 관리" />
+        <PageBar back="/" backLabel="처음으로" title="데이터 관리" />
         <AdminLogin onLogin={setUser} />
       </>
     );
@@ -119,10 +120,11 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
 
   return (
     <>
-      <TopBar
+      <PageBar
         back="/"
         backLabel="처음으로"
         title="데이터 관리"
+        keepOnPc
         right={<button type="button" onClick={onLogout} className="min-h-11 underline">로그아웃</button>}
       />
       <div className="flex flex-col gap-8 p-5 lg:p-8">
@@ -174,7 +176,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
               <p className="mt-1 text-sm text-body">{issue.description}</p>
               <p className="mt-1 text-sm text-muted">확인법: {issue.checkHow}</p>
               {issue.note && <p className="mt-1 text-xs text-muted">메모: {issue.note}</p>}
-              {issue.sourceUrl && <a href={issue.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 block text-xs text-accent underline">출처</a>}
+              {issue.sourceUrl && <a href={issue.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 block text-xs text-primary underline">출처</a>}
               <div className="mt-3 flex flex-wrap gap-2">
                 {issue.actions.map((a) => (
                   <button key={a.to} className={subtleBtn} onClick={() => transition(issue, a)}>{a.label}</button>
@@ -333,9 +335,9 @@ function CarForm({ onSubmit }: { onSubmit: (body: object) => Promise<boolean> })
 
 const REVIEW_BADGE: Record<IssueStatus, string> = {
   DRAFT: "bg-chip text-body",
-  IN_REVIEW: "bg-[#DBEAFE] text-[#1E40AF]",
-  VERIFIED: "bg-[#DCFCE7] text-[#166534]",
-  REJECTED: "bg-[#FEE2E2] text-[#991B1B]",
+  IN_REVIEW: "bg-info-soft text-info",
+  VERIFIED: "bg-success-soft text-success",
+  REJECTED: "bg-danger-soft text-danger-strong",
 };
 function ReviewBadge({ status }: { status: IssueStatus }) {
   return <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${REVIEW_BADGE[status]}`}>{STATUS_LABEL[status]}</span>;
@@ -356,7 +358,7 @@ function IssueHistoryList({ history }: { history: AdminIssue["history"] }) {
             {h.action === "CREATED" && "작성"}
             {h.action === "STATUS_CHANGED" && h.fromStatus && h.toStatus && <strong>{STATUS_LABEL[h.fromStatus]} → {STATUS_LABEL[h.toStatus]}</strong>}
             {h.action === "UPDATED" && `수정: ${Object.keys(h.changes ?? {}).map((k) => FIELD_LABEL[k] ?? k).join(", ")}`}
-            {h.reason && <span className="block text-[#92400E]">사유: {h.reason}</span>}
+            {h.reason && <span className="block text-warning">사유: {h.reason}</span>}
           </li>
         ))}
       </ol>
@@ -414,7 +416,7 @@ function ReportCard({
       <p className="text-sm text-body">{r.reasons.map((key) => REPORT_REASONS[key] ?? key).join(" · ")}</p>
       {r.comment && <p className="text-sm text-ink">“{r.comment}”</p>}
       {r.sourceUrl && (
-        <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-accent underline">{r.sourceUrl}</a>
+        <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-primary underline">{r.sourceUrl}</a>
       )}
       {r.answer && (
         <p className="text-sm text-body">

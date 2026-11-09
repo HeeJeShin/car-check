@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans_KR } from "next/font/google";
 import { PageViewTracker } from "@/components/page-view-tracker";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -24,13 +26,17 @@ export const metadata: Metadata = {
   },
 };
 
-// 기획대로 모바일 화면 기준. 넓은 화면에서는 가운데 한 줄로 보여줍니다.
-// 관리 화면만 예외: .admin-wide가 들어 있으면 PC 너비까지 넓힘 (app/admin/layout.tsx)
+// 헤더·푸터는 모든 화면에서 같은 전체 너비. 본문만 모바일 기준으로, 넓은 화면에서는 가운데 한 줄로 보여줍니다.
+// 예외: .admin-wide가 들어 있으면 PC 너비까지 넓힘 (app/admin/layout.tsx), .landing-wide는 메인 화면용 전체 너비, .select-page는 차종·연식 고르기 카드 화면(components/select-card.tsx)
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko" className={plex.variable}>
-      <body className="antialiased">
-        <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)] has-[.admin-wide]:max-w-6xl">{children}</div>
+      <body className="group/site flex min-h-dvh flex-col antialiased">
+        <SiteHeader />
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)] has-[.admin-wide]:max-w-6xl has-[.landing-wide]:max-w-none has-[.landing-wide]:shadow-none has-[.select-page]:max-w-none has-[.select-page]:bg-white has-[.select-page]:shadow-none">
+          {children}
+        </div>
+        <SiteFooter />
         {/* 방문 통계: 화면을 볼 때마다 우리 API에 기록 (관리 화면 → 방문 통계 차트) */}
         <PageViewTracker />
       </body>

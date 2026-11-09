@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
-/* 중구 디자인 토큰 (화면 기획 캔버스와 같은 값). bg-ground, text-muted, border-line 처럼 씁니다. */
+/* 중구 디자인 토큰. bg-primary, hover:bg-primary-hover, text-muted 처럼 씁니다. 색을 바꿀 때는 여기만 고치세요. */
 @theme {
+  /* 메인 컬러 */
+  --color-primary: #d7141a;
+  --color-primary-hover: #a80f14;
+  --color-primary-strong: #8f0d12; /* 연한 빨강 배경 위 글자 */
+  --color-primary-soft: #fdecec;
+
+  /* 로고: 빨간 글자 + 검은 그림자 (text-shadow-logo) */
+  --color-logo-shadow: #111111;
+  --text-shadow-logo: 0.05em 0.05em 0 var(--color-logo-shadow);
+
+  /* 글자·선·배경 */
   --color-ink: #16181d;
+  --color-ink-hover: #000000;
   --color-body: #3f4550;
   --color-muted: #5b6270;
   --color-faint: #8a919c;
@@ -10,10 +22,30 @@
   --color-field: #d4d8df;
   --color-ground: #f5f6f8;
   --color-chip: #eef0f3;
-  --color-accent: #1d4ed8;
-  --color-accent-dark: #1e3a8a;
-  --color-accent-soft: #e8eefc;
-  --color-danger: #dc2626;
+  --color-phone: #1b2029;
+
+  /* 상태 색 */
+  --color-success: #166534;
+  --color-success-soft: #dcfce7;
+  --color-info: #1e40af;
+  --color-info-soft: #dbeafe;
+  --color-warning: #92400e;
+  --color-warning-soft: #fef3c7;
+  --color-warning-line: #d4a55a;
+  --color-caution: #c2410c;
+  --color-caution-strong: #9a3412;
+  --color-caution-soft: #ffedd5;
+  --color-danger: var(--color-primary);
+  --color-danger-text: #b91c1c;
+  --color-danger-strong: #991b1b;
+  --color-danger-soft: #fee2e2;
+  --color-danger-tint: #fef2f2;
+  --color-danger-line: #fecaca;
+
+  /* 그림자 */
+  --shadow-phone: 0 30px 70px -20px rgb(0 0 0 / 0.5);
+  --shadow-float: 0 8px 24px -10px rgb(0 0 0 / 0.3);
+
   --font-sans: var(--font-plex), system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
 }
 
@@ -25,4 +57,44 @@ body {
   background: var(--color-ground);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/* 메인 화면 전용 장식 */
+.blueprint {
+  background-image:
+    linear-gradient(rgb(0 0 0 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(0 0 0 / 0.04) 1px, transparent 1px),
+    radial-gradient(70% 90% at 80% 20%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 70%);
+  background-size: 44px 44px, 44px 44px, 100% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .float {
+    animation: float 5s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    50% {
+      translate: 0 -10px;
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        transform: translateY(36px);
+      }
+    }
+  }
+
+  html:has(.landing-wide) {
+    scroll-behavior: smooth;
+  }
 }

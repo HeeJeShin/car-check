@@ -5,7 +5,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ReportChecklist } from "@/components/report-checklist";
 import { ReportIssue } from "@/components/report-issue";
-import { Card, ChevronRight, SEVERITY, SeverityText, StatusBadge, TopBar, primaryBtn, secondaryBtn } from "@/components/ui";
+import { PageBar } from "@/components/page-bar";
+import { Card, ChevronRight, SEVERITY, SeverityText, StatusBadge, primaryBtn, secondaryBtn } from "@/components/ui";
 import { FUEL_LABEL, REPORT_REASONS, TRANSMISSION_LABEL, generationsHref, yearText, type CarIssue, type CarReport } from "@/lib/api";
 import { cachedApi } from "@/lib/cached";
 
@@ -52,7 +53,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <TopBar back={back} backLabel="연식 다시 고르기" right="3 / 3 단계" />
+      <PageBar back={back} backLabel="연식 다시 고르기" title="고질병 리포트" step="3/3" />
 
       <section className="flex flex-col gap-3 bg-white px-5 pt-6 pb-5">
         <span className="text-[13px] font-medium text-muted">{car.maker} · {car.name} {car.generation}</span>
@@ -73,12 +74,12 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             ))}
           </ul>
         )}
-        <Link href={`/cars/${car.id}/inspect`} className="flex items-center gap-3 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3.5">
+        <Link href={`/cars/${car.id}/inspect`} className="flex items-center gap-3 rounded-xl border border-danger-line bg-danger-tint p-3.5">
           <span className="flex flex-1 flex-col gap-0.5">
             <span className="text-[15px] font-bold">매장 점검 가이드</span>
             <span className="text-[13px] text-body">본넷 열고 볼 곳 · 이 차 시운전 포인트</span>
           </span>
-          <ChevronRight className="text-[#B91C1C]" />
+          <ChevronRight className="text-danger-text" />
         </Link>
         <nav aria-label="리포트 목차" className="mt-1 flex gap-1.5">
           <a href="#issues" className="flex-1 border-b-2 border-ink py-3 text-center text-sm font-bold">고질병</a>
@@ -91,7 +92,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <h2 className="text-lg font-bold">알려진 고질병</h2>
         {car.issues.length === 0 && <Card className="p-4 text-sm text-body">아직 등록된 고질병이 없어요. 아래 공통 점검은 꼭 해보세요.</Card>}
         {car.issues.map((issue) => (
-          <article key={issue.id} className={`flex flex-col gap-2 rounded-[14px] bg-white p-4 ${issue.status === "VERIFIED" ? "border border-line" : "border border-dashed border-[#D4A55A]"}`}>
+          <article key={issue.id} className={`flex flex-col gap-2 rounded-[14px] bg-white p-4 ${issue.status === "VERIFIED" ? "border border-line" : "border border-dashed border-warning-line"}`}>
             <div className="flex items-center gap-2">
               <SeverityText severity={issue.severity} />
               <span className="text-xs text-muted">{issue.part}{issue.engine && ` · ${issue.engine}`}</span>
@@ -99,13 +100,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             </div>
             <h3 className="text-base font-bold">{issue.title}</h3>
             <p className="text-sm leading-relaxed text-body">{issue.description}</p>
-            <div className="rounded-[10px] bg-accent-soft p-3 text-sm leading-relaxed text-accent-dark">
+            <div className="rounded-[10px] bg-chip p-3 text-sm leading-relaxed text-body">
               <strong>살 때 확인할 것</strong> {issue.checkHow}
             </div>
             {issue.status === "VERIFIED" && issue.sourceUrl ? (
-              <a href={issue.sourceUrl} target="_blank" rel="noreferrer" className="text-xs text-accent underline">출처 보기</a>
+              <a href={issue.sourceUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">출처 보기</a>
             ) : (
-              <p className="text-xs text-[#92400E]">아직 확인 중인 정보예요. 정비소에서 한 번 더 물어보세요.</p>
+              <p className="text-xs text-warning">아직 확인 중인 정보예요. 정비소에서 한 번 더 물어보세요.</p>
             )}
             <AnsweredReports issue={issue} />
             <ReportIssue issueId={issue.id} />
@@ -147,7 +148,7 @@ function AnsweredReports({ issue }: { issue: CarIssue }) {
           <p className="text-xs text-muted">{r.reasons.map((key) => REPORT_REASONS[key] ?? key).join(" · ")}</p>
           {r.comment && <p className="text-body">“{r.comment}”</p>}
           <p className="text-ink">
-            <strong className="text-accent-dark">운영자 답변</strong> {r.answer}
+            <strong className="text-primary-strong">운영자 답변</strong> {r.answer}
           </p>
         </div>
       ))}

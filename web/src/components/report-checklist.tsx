@@ -50,12 +50,12 @@ export function ReportChecklist({ carId, items }: { carId: number; items: string
     <section id="checklist" className="flex scroll-mt-20 flex-col gap-3 px-5 pt-2 pb-5">
       <div className="flex items-baseline justify-between">
         <h2 className="text-lg font-bold">매장에서 체크하기</h2>
-        <span className="text-sm font-bold text-accent">{done} / {items.length}</span>
+        <span className="text-sm font-bold text-primary">{done} / {items.length}</span>
       </div>
       <Card className="flex flex-col px-4 py-1">
         {items.map((label) => (
           <label key={label} className="flex min-h-[52px] cursor-pointer items-center gap-3 border-b border-chip last:border-b-0">
-            <input type="checkbox" checked={!!checks[label]} onChange={() => toggle(label)} className="h-5 w-5 flex-none accent-accent" />
+            <input type="checkbox" checked={!!checks[label]} onChange={() => toggle(label)} className="h-5 w-5 flex-none accent-primary" />
             <span className={`text-[15px] ${checks[label] ? "text-faint line-through" : "text-ink"}`}>{label}</span>
           </label>
         ))}
