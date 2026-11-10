@@ -20,7 +20,9 @@ function fakePrisma() {
         return user;
       }),
       findUnique: vi.fn(async ({ where }) => users.get(where.id) ?? null),
+      delete: vi.fn(async ({ where }) => users.delete(where.id)),
     },
+    issueHistory: { count: vi.fn(async () => 0) },
   } as unknown as PrismaService;
 }
 
@@ -51,12 +53,12 @@ const googleToken = (claims: Record<string, unknown>, audience = CLIENT_ID) =>
     .sign(googleKey);
 
 describe("역할 결정 (.env 이메일 목록)", () => {
-  it("ADMIN 목록 > EDITOR 목록 > 없음(null). 대소문자·공백 무시", () => {
+  it("ADMIN 목록 > EDITOR 목록 > 없으면 USER. 대소문자·공백 무시", () => {
     vi.stubEnv("ADMIN_EMAILS", " Boss@Example.com , other@x.com");
     vi.stubEnv("EDITOR_EMAILS", "writer@example.com,boss@example.com");
     expect(roleFor("boss@example.com")).toBe("ADMIN");
     expect(roleFor("WRITER@example.com")).toBe("EDITOR");
-    expect(roleFor("stranger@example.com")).toBeNull();
+    expect(roleFor("stranger@example.com")).toBe("USER");
   });
 });
 
@@ -69,12 +71,20 @@ describe("구글 로그인", () => {
     expect((await auth.verify(token))?.email).toBe("boss@example.com");
   });
 
-  it("다른 앱(Client ID)용 토큰, 이메일 미확인 계정, 목록에 없는 계정은 거절", async () => {
+  it("다른 앱(Client ID)용 토큰, 이메일 미확인 계정은 거절", async () => {
     const auth = setup();
     auth.useGoogleKeysForTest(googleKeys);
     await expect(auth.loginWithGoogle(await googleToken({ email: "boss@example.com" }, "other-app"))).rejects.toBeInstanceOf(UnauthorizedException);
     await expect(auth.loginWithGoogle(await googleToken({ email: "boss@example.com", email_verified: false }))).rejects.toBeInstanceOf(UnauthorizedException);
-    await expect(auth.loginWithGoogle(await googleToken({ email: "stranger@example.com" }))).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("일반 사용자는 계정을 삭제할 수 있고 토큰도 무효가 된다. 관리자 계정은 삭제 불가", async () => {
+    const auth = setup({ AUTH_DEV_LOGIN: "true" });
+    const { token, user } = await auth.loginForDev("stranger@example.com");
+    await auth.deleteAccount(user);
+    expect(await auth.verify(token)).toBeNull();
+    const admin = await auth.loginForDev("boss@example.com");
+    await expect(auth.deleteAccount(admin.user)).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it("위조한 토큰(다른 키로 서명)은 거절", async () => {
@@ -124,6 +134,10 @@ describe("AuthGuard: 쓰기 API는 기본으로 막고 필요한 곳만 연다",
   it("표시 없는 쓰기는 ADMIN만, EDITOR는 403", async () => {
     expect(await call("adminOnly", { as: "boss@example.com" })).toBe("ok");
     expect(await call("adminOnly", { as: "writer@example.com" })).toBe("ForbiddenException");
+  });
+  it("일반 사용자(USER)는 관리자용·에디터용 쓰기를 쓸 수 없다", async () => {
+    expect(await call("adminOnly", { as: "stranger@example.com" })).toBe("ForbiddenException");
+    expect(await call("editorToo", { as: "stranger@example.com" })).toBe("ForbiddenException");
   });
   it("@Roles(ADMIN, EDITOR)는 에디터도", async () => expect(await call("editorToo", { as: "writer@example.com" })).toBe("ok"));
   it("@Roles가 붙은 GET은 로그인 필요 (관리 화면용 목록)", async () => {

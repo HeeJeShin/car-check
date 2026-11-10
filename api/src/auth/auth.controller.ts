@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Headers, HttpCode, Post, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, HttpCode, Post, UnauthorizedException } from "@nestjs/common";
 import { ApiProperty, ApiTags } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString } from "class-validator";
-import { Public } from "./auth.guard";
-import { AuthService } from "./auth.service";
+import { CurrentUser, Public, Roles } from "./auth.guard";
+import { type AuthUser, AuthService } from "./auth.service";
 
 class GoogleLoginDto {
   @ApiProperty({ description: "구글 로그인 버튼이 준 ID 토큰(credential)" })
@@ -39,6 +39,13 @@ export class AuthController {
   @HttpCode(200)
   dev(@Body() dto: DevLoginDto) {
     return this.auth.loginForDev(dto.email);
+  }
+
+  @Delete("me") // 내 계정 삭제 (내 차량도 함께 삭제)
+  @Roles("ADMIN", "EDITOR", "USER")
+  @HttpCode(204)
+  deleteMe(@CurrentUser() user: AuthUser) {
+    return this.auth.deleteAccount(user);
   }
 
   // GET이라 Guard가 그냥 통과시키므로 여기서 직접 확인합니다.

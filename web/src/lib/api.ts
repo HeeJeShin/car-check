@@ -135,8 +135,10 @@ export const TRANSMISSION_LABEL: Record<Transmission, string> = { AT: "자동", 
 
 // ── 관리 화면 로그인 ──
 // 로그인 토큰은 이 브라우저에만 저장하고, api()가 요청마다 붙여 보냅니다. (서버에서 도는 조회 화면은 토큰 없이 호출)
-export type Role = "ADMIN" | "EDITOR";
+export type Role = "ADMIN" | "EDITOR" | "USER";
 export type AuthUser = { id: number; email: string; name: string; picture: string | null; role: Role };
+/** 내 차량(즐겨찾기) 한 대. id는 세대(CarModel) id */
+export type Favorite = { id: number; maker: string; name: string; displayName: string; yearFrom: number; yearTo: number | null; issueCount: number; savedAt: string };
 export type AuthConfig = { googleClientId: string | null; devLogin: boolean };
 
 const TOKEN_KEY = "jungu-admin-token";
