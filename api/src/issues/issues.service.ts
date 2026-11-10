@@ -70,7 +70,7 @@ export class IssuesService {
     if (!rule.roles.includes(user.role)) throw new ForbiddenException(`'${rule.label}'은(는) 관리자(ADMIN)만 할 수 있습니다.`);
     if (rule.needs === "reason" && !dto.reason?.trim()) throw new BadRequestException(`'${rule.label}'에는 사유가 필요합니다.`);
     const sourceUrl = dto.sourceUrl ?? issue.sourceUrl;
-    if (rule.needs === "sourceUrl" && !sourceUrl) throw new BadRequestException("승인(검증됨)하려면 출처(sourceUrl)가 필요합니다.");
+    if (rule.needs === "sourceUrl" && !sourceUrl) throw new BadRequestException("승인하려면 출처(sourceUrl)가 필요합니다.");
 
     return this.prisma.$transaction(async (tx) => {
       const { count } = await tx.carIssue.updateMany({

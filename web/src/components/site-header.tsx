@@ -15,7 +15,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-1 sm:gap-5">
           <Link href="/#issues" className={navLink}>고질병</Link>
           <Link href="/#inspect" className={navLink}>매장 점검</Link>
-          <Link href="/guide" className={navLink}>AI 가이드</Link>
+          <Link href="/guide" className={navLink}>AI 차량 추천</Link>
           <Link href="/cars" className="flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-white hover:bg-primary-hover">차종 찾기</Link>
         </nav>
       </div>

@@ -106,12 +106,12 @@ export default function MainPage() {
 
       <section className="px-5 pt-24 sm:pt-32">
         <div className="reveal mx-auto flex max-w-5xl flex-col-reverse items-center gap-12 rounded-[32px] bg-primary-soft px-6 py-14 md:flex-row md:justify-between md:px-16">
-          <Phone label="AI 가이드 화면 예시"><GuideScreen /></Phone>
+          <Phone label="AI 차량 추천 화면 예시"><GuideScreen /></Phone>
           <div className="text-center md:text-right">
             <Eyebrow>어떤 차를 살지 고민이라면</Eyebrow>
             <h2 className={sectionTitle}>아직 차를<br />못 정했어도 괜찮아요</h2>
-            <p className="mt-5 text-base leading-relaxed text-body sm:text-lg">용도와 예산만 알려주시면 AI가 맞는 차종을 추천해요.</p>
-            <Link href="/guide" className={`${heroBtn} mt-8 bg-ink text-white hover:bg-ink-hover`}>AI에게 물어보기</Link>
+            <p className="mt-5 text-base leading-relaxed text-body sm:text-lg">원하는 조건을 한 문장으로 말하면 AI가 맞는 차종과 연식을 추천해요.</p>
+            <Link href="/guide" className={`${heroBtn} mt-8 bg-ink text-white hover:bg-ink-hover`}>AI 추천 받기</Link>
           </div>
         </div>
       </section>
@@ -121,7 +121,7 @@ export default function MainPage() {
           <h2 className={sectionTitle}>확인한 정보와<br />확인 중인 정보를 나눠서 보여드려요</h2>
           <div className="mt-10 grid gap-4 text-left sm:grid-cols-2">
             <div className="rounded-2xl border border-line p-6">
-              <span className="rounded-md bg-success-soft px-2.5 py-1 text-sm font-bold text-success">검증됨</span>
+              <span className="rounded-md bg-success-soft px-2.5 py-1 text-sm font-bold text-success">출처 있음</span>
               <p className="mt-4 text-lg font-bold">출처를 직접 확인한 정보</p>
               <p className="mt-1 text-[15px] text-body">출처 링크를 함께 보여드려요.</p>
             </div>

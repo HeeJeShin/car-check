@@ -62,7 +62,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           {(["HIGH", "MEDIUM", "LOW"] as const).map((s) =>
             count(s) > 0 ? <span key={s} className={`rounded-lg px-2.5 py-1.5 text-[13px] font-bold ${SEVERITY[s].chip}`}>{SEVERITY[s].label} {count(s)}</span> : null,
           )}
-          <span className="rounded-lg bg-chip px-2.5 py-1.5 text-[13px] font-medium text-body">검증됨 {verified} · 참고 {car.issues.length - verified}</span>
+          <span className="rounded-lg bg-chip px-2.5 py-1.5 text-[13px] font-medium text-body">출처 있음 {verified} · 참고 {car.issues.length - verified}</span>
         </div>
         {car.powertrains.length > 0 && (
           <ul className="flex flex-col gap-1 text-sm text-body">
@@ -126,7 +126,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       </section>
 
       <section className="flex flex-col gap-2.5 px-5 pt-3 pb-8">
-        <Link href="/guide" className={primaryBtn}>AI에게 더 물어보기</Link>
+        <Link href="/guide" className={primaryBtn}>다른 차도 추천받기</Link>
         <Link href={back} className={secondaryBtn}>다른 연식 보기</Link>
       </section>
     </>

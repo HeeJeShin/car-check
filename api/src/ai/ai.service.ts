@@ -8,22 +8,28 @@ import { ApiError, GoogleGenAI } from "@google/genai";
 import { HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { CarsService } from "../cars/cars.service";
 import { AiCache, normalizeText } from "./ai-cache";
-import { GuideDto, RecommendDto } from "./dto/ai.dto";
-import { MOCK_GUIDE, MOCK_RECOMMEND } from "./mock-answers";
-import { GUIDE_SYSTEM, RECOMMEND_SCHEMA, RECOMMEND_SYSTEM } from "./prompts";
+import { RecommendDto } from "./dto/ai.dto";
+import { mockRecommendation } from "./mock-answers";
+import { RECOMMEND_SCHEMA, RECOMMEND_SYSTEM } from "./prompts";
 import { type Limit, RateLimiter } from "./rate-limiter";
 
 export type AiMode = "gemini" | "mock" | "off";
 
-export type LinkedCar = { id: number; label: string; maker: string; name: string };
-export type RecommendedCar = { name: string; yearRange: string; why: string; watchOut: string };
-export type RecommendResult = {
-  summary: string;
-  // carModels: 추천된 차종 중 우리 DB에 고질병 정보가 있는 세대들 → 화면에서 바로 링크
-  cars: (RecommendedCar & { carModels: LinkedCar[] })[];
-  nextSteps: string[];
+/** AI에게 넘기는 후보: 등록된 세대 하나 (CarsService.recommendCandidates) */
+export type RecommendCandidate = {
+  id: number;
+  maker: string;
+  displayName: string;
+  segment: string | null;
+  bodyType: string;
+  yearFrom: number;
+  yearTo: number | null;
+  fuels: string[];
 };
-type AiRecommendation = { summary: string; cars: RecommendedCar[]; nextSteps: string[] };
+type AiCarPick = { carModelId: number; yearFrom: number; yearTo: number; why: string; watchOut: string };
+export type AiRecommendation = { summary: string; cars: AiCarPick[] };
+export type RecommendedCar = { id: number; maker: string; label: string; yearRange: string; why: string; watchOut: string };
+export type RecommendResult = { summary: string; cars: RecommendedCar[] };
 
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
@@ -35,12 +41,12 @@ export const AI_LIMITS = {
 } satisfies Record<string, Limit>;
 const CACHE_TTL = DAY; // 같은 질문 답은 하루 동안 재사용
 const CACHE_MAX = 500; // 질문 500개까지 저장. 넘으면 오래 안 쓴 것부터 지움
+const MAX_RECOMMENDED = 5;
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private client?: GoogleGenAI;
-  private readonly guideCache = new AiCache<string>(CACHE_TTL, CACHE_MAX);
   private readonly recommendCache = new AiCache<AiRecommendation>(CACHE_TTL, CACHE_MAX);
   private readonly limiter = new RateLimiter();
   private calls = 0;
@@ -54,44 +60,26 @@ export class AiService {
   }
 
   /** ip: 요청 제한용 (컨트롤러가 넘겨줌) */
-  async guide(dto: GuideDto, ip: string): Promise<{ answer: string }> {
-    const mode = this.ensureOn();
-    if (mode === "mock") return { answer: MOCK_GUIDE };
-    const answer = await this.guideCache.getOrCreate(normalizeText(dto.question), () => {
-      this.acquire(ip);
-      return this.generate(GUIDE_SYSTEM, dto.question);
-    });
-    return { answer };
-  }
-
   async recommend(dto: RecommendDto, ip: string): Promise<RecommendResult> {
     const mode = this.ensureOn();
-    let result: AiRecommendation;
-    if (mode === "mock") {
-      result = MOCK_RECOMMEND;
-    } else {
-      const key = [normalizeText(dto.purpose), dto.budgetManwon, dto.passengers ?? "", normalizeText(dto.notes ?? "")].join("|");
-      result = await this.recommendCache.getOrCreate(key, () => {
-        this.acquire(ip);
-        return this.askRecommend(dto);
-      });
-    }
-    // AI가 추천한 차종 이름을 우리 DB와 연결 → "이 차의 고질병 보기" 링크
-    // (캐시에는 AI 답만 저장하고, 연결은 매번 새로 해서 DB에 차종이 추가되면 바로 반영)
-    const models = await this.cars.findAll();
-    return { ...result, cars: result.cars.map((car) => ({ ...car, carModels: linkCar(car.name, models) })) };
+    const candidates = await this.cars.recommendCandidates();
+    const answer =
+      mode === "mock"
+        ? mockRecommendation(candidates)
+        : await this.recommendCache.getOrCreate(normalizeText(dto.request), () => {
+            this.acquire(ip);
+            return this.askRecommend(dto, candidates);
+          });
+    // AI 답은 그대로 믿지 않고 DB와 맞춰 봅니다. 캐시에는 AI 답만 저장해서, 차종이 바뀌면 바로 반영됩니다.
+    return { summary: answer.summary, cars: toRecommendedCars(answer.cars, candidates) };
   }
 
-  private async askRecommend(dto: RecommendDto): Promise<AiRecommendation> {
-    const prompt = [
-      `용도: ${dto.purpose}`,
-      `예산: ${dto.budgetManwon}만원`,
-      dto.passengers && `주로 타는 인원: ${dto.passengers}명`,
-      dto.notes && `기타: ${dto.notes}`,
-    ]
-      .filter(Boolean)
+  private async askRecommend(dto: RecommendDto, candidates: RecommendCandidate[]): Promise<AiRecommendation> {
+    const list = candidates
+      .map((c) => [c.id, `${c.maker} ${c.displayName}`, c.segment ?? "-", c.bodyType, `${c.yearFrom}~${c.yearTo ?? "현재"}`, c.fuels.join("/")].join(" | "))
       .join("\n");
-    const text = await this.generate(RECOMMEND_SYSTEM, prompt, RECOMMEND_SCHEMA);
+    // 사용자 입력은 contents로만 보내 규칙·목록(systemInstruction)과 섞이지 않게 합니다.
+    const text = await this.generate(`${RECOMMEND_SYSTEM}\n\n등록된 차 (번호 | 차 | 차급 | 종류 | 판매 연식 | 연료):\n${list}`, dto.request, RECOMMEND_SCHEMA);
     try {
       return JSON.parse(text);
     } catch {
@@ -157,18 +145,24 @@ export class AiService {
   }
 }
 
-const normalize = (s: string) => s.toLowerCase().replace(/\s/g, "");
-
 /**
- * AI가 말한 차종 이름 → 우리 DB의 차종(세대)들.
- * AI는 "올뉴 투싼", "기아 K5"처럼 다양하게 쓰므로 이름·별칭이 포함되는지로 느슨하게 맞춥니다.
+ * AI가 고른 차 → 화면에 보여줄 추천.
+ * 등록되지 않은 세대와 중복은 빼고, 연식은 그 세대의 판매 기간 안으로 줄입니다(겹치는 연식이 없으면 뺌).
  */
-export function linkCar(
-  name: string,
-  models: { id: number; maker: string; name: string; displayName: string; yearFrom: number; yearTo: number | null; aliases: string[] }[],
-): LinkedCar[] {
-  const target = normalize(name);
-  return models
-    .filter((m) => [m.name, m.displayName, ...m.aliases].some((n) => n && target.includes(normalize(n))))
-    .map((m) => ({ id: m.id, maker: m.maker, name: m.name, label: `${m.displayName} (${m.yearFrom}~${m.yearTo ?? "현재"})` }));
+export function toRecommendedCars(picks: AiCarPick[], candidates: RecommendCandidate[]): RecommendedCar[] {
+  const byId = new Map(candidates.map((c) => [c.id, c]));
+  const seen = new Set<number>();
+  const thisYear = new Date().getFullYear();
+  return picks
+    .flatMap((pick) => {
+      const car = byId.get(pick.carModelId);
+      if (!car || seen.has(car.id)) return [];
+      const from = Math.max(pick.yearFrom, car.yearFrom);
+      const to = Math.min(pick.yearTo, car.yearTo ?? thisYear);
+      if (from > to) return [];
+      seen.add(car.id);
+      const yearRange = from === to ? `${from}` : `${from}~${to}`;
+      return [{ id: car.id, maker: car.maker, label: car.displayName, yearRange, why: pick.why, watchOut: pick.watchOut }];
+    })
+    .slice(0, MAX_RECOMMENDED);
 }
