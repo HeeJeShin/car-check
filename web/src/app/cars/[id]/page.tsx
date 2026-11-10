@@ -7,9 +7,10 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { ReportChecklist } from "@/components/report-checklist";
 import { ReportIssue } from "@/components/report-issue";
 import { PageBar } from "@/components/page-bar";
-import { Card, ChevronRight, SEVERITY, SeverityText, StatusBadge, primaryBtn, secondaryBtn } from "@/components/ui";
+import { Card, ChevronRight, SEVERITY, SeverityText, StatusBadge } from "@/components/ui";
 import { FUEL_LABEL, REPORT_REASONS, TRANSMISSION_LABEL, generationsHref, yearText, type CarIssue, type CarReport } from "@/lib/api";
 import { cachedApi } from "@/lib/cached";
+import { LinkButton } from "@/components/button";
 
 export const revalidate = 3600;
 
@@ -128,8 +129,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       </section>
 
       <section className="flex flex-col gap-2.5 px-5 pt-3 pb-8">
-        <Link href="/guide" className={primaryBtn}>다른 차도 추천받기</Link>
-        <Link href={back} className={secondaryBtn}>다른 연식 보기</Link>
+        <LinkButton href="/guide">다른 차도 추천받기</LinkButton>
+        <LinkButton href={back} variant="secondary" size="md">다른 연식 보기</LinkButton>
       </section>
     </>
   );

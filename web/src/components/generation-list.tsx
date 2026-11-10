@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { PageBar } from "@/components/page-bar";
-import { SelectCard } from "@/components/select-card";
+import { PageCard } from "@/components/page-card";
 import { ChevronRight, fieldCls } from "@/components/ui";
 import { BODY_LABEL, yearText, type CarModel } from "@/lib/api";
 
@@ -17,7 +17,7 @@ export function GenerationList({ maker, name, gens }: { maker: string; name: str
   return (
     <>
       <PageBar back="/cars" backLabel="차종 다시 고르기" title="연식 선택" step="2/3" />
-      <SelectCard>
+      <PageCard>
         <span className="text-[13px] font-medium text-muted">{maker} · {name}</span>
         <h1 className="text-2xl font-bold tracking-tight">몇 년식 {name}인가요?</h1>
         <p className="text-sm leading-relaxed text-body">같은 {name}라도 나온 시기(세대)마다 고질병이 달라요. 사려는 차의 이름과 연식 구간을 골라주세요.</p>
@@ -44,7 +44,7 @@ export function GenerationList({ maker, name, gens }: { maker: string; name: str
           <p className="text-sm font-bold">세대를 잘 모르겠다면</p>
           <p className="text-[13px] leading-relaxed">판매 글이나 차량등록증의 &apos;최초등록일&apos;을 보고 연식을 입력하세요. 한 해에 두 세대가 겹치면 둘 다 보여드리니, 차 앞모습 사진으로 구분하면 돼요.</p>
         </div>
-      </SelectCard>
+      </PageCard>
     </>
   );
 }

@@ -30,13 +30,13 @@ export const metadata: Metadata = {
 };
 
 // 헤더·푸터는 모든 화면에서 같은 전체 너비. 본문만 모바일 기준으로, 넓은 화면에서는 가운데 한 줄로 보여줍니다.
-// 예외: .admin-wide가 들어 있으면 PC 너비까지 넓힘 (app/admin/layout.tsx), .landing-wide는 메인 화면용 전체 너비, .select-page는 차종·연식 고르기 카드 화면(components/select-card.tsx)
+// 예외: .admin-wide가 들어 있으면 PC 너비까지 넓힘 (app/admin/layout.tsx), .landing-wide는 메인 화면용 전체 너비, .page-card는 차종·연식 고르기·로그인 카드 화면(components/page-card.tsx)
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko" className={plex.variable}>
       <body className="group/site flex min-h-dvh flex-col antialiased">
         <SiteHeader />
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)] has-[.admin-wide]:max-w-6xl has-[.landing-wide]:max-w-none has-[.landing-wide]:shadow-none has-[.select-page]:max-w-none has-[.select-page]:bg-white has-[.select-page]:shadow-none">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)] has-[.admin-wide]:max-w-6xl has-[.landing-wide]:max-w-none has-[.landing-wide]:shadow-none has-[.page-card]:max-w-none has-[.page-card]:bg-white has-[.page-card]:shadow-none">
           {children}
         </div>
         <SiteFooter />

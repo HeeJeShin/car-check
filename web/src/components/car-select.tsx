@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PageBar } from "@/components/page-bar";
-import { SelectCard } from "@/components/select-card";
+import { PageCard } from "@/components/page-card";
 import { Pill } from "@/components/ui";
 import { BODY_LABEL, generationsHref, type BodyType, type ModelCard } from "@/lib/api";
 
@@ -36,7 +36,7 @@ export function CarSelect({ models }: { models: ModelCard[] }) {
   return (
     <>
       <PageBar back="/" backLabel="처음으로" title="차종 선택" step="1/3" />
-      <SelectCard>
+      <PageCard>
         <h1 className="mb-2 text-2xl leading-snug font-bold tracking-tight">어떤 차를 <br />사려고 하세요?</h1>
         <label className="flex flex-col gap-1.5">
           <span className="text-[13px] text-muted">차 이름으로 찾기</span>
@@ -84,7 +84,7 @@ export function CarSelect({ models }: { models: ModelCard[] }) {
         {shown.length === 0 && <p className="rounded-[14px] bg-white p-4 text-sm text-body">찾는 차가 아직 없어요.</p>}
         <p className="mt-2 text-[13px] leading-relaxed break-keep text-muted">찾는 차가 없나요? 고질병 데이터는 인기 차종부터 계속 늘려가고 있어요.</p>
         <Link href="/guide" className="mt-2 flex min-h-11 items-center justify-center text-sm font-bold underline hover:text-primary">아직 차를 못 정했어요</Link>
-      </SelectCard>
+      </PageCard>
     </>
   );
 }

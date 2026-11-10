@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { refreshPublicPages } from "@/app/actions";
 import { AdminLogin } from "@/components/admin-login";
+import { Button } from "@/components/button";
 import { BonnetDiagram } from "@/components/bonnet-diagram";
 import { VisitStats } from "@/components/visit-stats";
 import { PageBar } from "@/components/page-bar";
@@ -15,8 +16,6 @@ import {
   type AdminIssue, type AdminReport, type AuthUser, type CarModel, type CarReport, type Inspection, type IssueStatus, type Severity,
 } from "@/lib/api";
 
-const btn = "rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-hover disabled:opacity-50";
-const subtleBtn = "rounded-lg border border-field bg-white px-3 py-1.5 text-sm";
 const textareaCls = "h-16 w-full rounded-xl border border-field bg-white px-3.5 py-2.5 text-sm outline-none focus:border-primary";
 
 export default function AdminPage() {
@@ -179,9 +178,9 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
               {issue.sourceUrl && <a href={issue.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 block text-xs text-primary underline">출처</a>}
               <div className="mt-3 flex flex-wrap gap-2">
                 {issue.actions.map((a) => (
-                  <button key={a.to} className={subtleBtn} onClick={() => transition(issue, a)}>{a.label}</button>
+                  <Button key={a.to} variant="secondary" size="xs" onClick={() => transition(issue, a)}>{a.label}</Button>
                 ))}
-                {isAdmin && <button className={subtleBtn} onClick={() => remove(`/issues/${issue.id}`, "고질병")}>삭제</button>}
+                {isAdmin && <Button variant="secondary" size="xs" onClick={() => remove(`/issues/${issue.id}`, "고질병")}>삭제</Button>}
               </div>
               <IssueHistoryList history={issue.history} />
             </Card>
@@ -197,7 +196,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
             <Card key={p.id} className="flex items-center gap-2 p-3 text-sm">
               <span className="font-bold">{p.no}. {p.title}</span>
               <span className="text-muted">({p.x}%, {p.y}%)</span>
-              {isAdmin && <button className={`${subtleBtn} ml-auto`} onClick={() => remove(`/inspection-points/${p.id}`, "점검 포인트")}>삭제</button>}
+              {isAdmin && <Button variant="secondary" size="xs" className="ml-auto" onClick={() => remove(`/inspection-points/${p.id}`, "점검 포인트")}>삭제</Button>}
             </Card>
           ))}
           {selectedId && <PointForm carModelId={selectedId} onSubmit={(body) => run(() => api("/inspection-points", { method: "POST", json: body }))} />}
@@ -237,7 +236,7 @@ function IssueForm({ carModelId, onSubmit }: { carModelId: number; onSubmit: (bo
         <textarea className={textareaCls} placeholder="살 때 어떻게 확인하는지" value={f.checkHow} onChange={set("checkHow")} />
         <input className={fieldCls} placeholder="출처 URL (선택)" value={f.sourceUrl} onChange={set("sourceUrl")} />
         <input className={fieldCls} placeholder="메모 (선택)" value={f.note} onChange={set("note")} />
-        <div><button className={btn}>초안으로 추가</button></div>
+        <div><Button size="sm">초안으로 추가</Button></div>
       </form>
     </Card>
   );
@@ -265,7 +264,7 @@ function PointForm({ carModelId, onSubmit }: { carModelId: number; onSubmit: (bo
           <label className="text-xs text-muted">가로 위치 % (왼쪽 0 → 오른쪽 100)<input className={fieldCls} inputMode="decimal" value={f.x} onChange={set("x")} /></label>
           <label className="text-xs text-muted">세로 위치 % (앞유리 0 → 범퍼 100)<input className={fieldCls} inputMode="decimal" value={f.y} onChange={set("y")} /></label>
         </div>
-        <div><button className={btn}>포인트 추가</button></div>
+        <div><Button size="sm">포인트 추가</Button></div>
       </form>
     </Card>
   );
@@ -326,7 +325,7 @@ function CarForm({ onSubmit }: { onSubmit: (body: object) => Promise<boolean> })
             <input className={fieldCls} placeholder="미션 상세 (예: 8단 자동)" value={f.gearbox} onChange={set("gearbox")} />
             <input className={fieldCls} placeholder="구동 (예: 2WD)" value={f.drive} onChange={set("drive")} />
           </div>
-          <div><button className={btn}>차종 추가</button></div>
+          <div><Button size="sm">차종 추가</Button></div>
         </form>
       </Card>
     </section>
@@ -433,8 +432,8 @@ function ReportCard({
         >
           <textarea className={textareaCls} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="제보에 대한 답변 (사용자 화면에 공개돼요)" maxLength={1000} />
           <div className="flex gap-2">
-            <button type="submit" className={btn} disabled={!answer.trim()}>{r.answer ? "답변 고치기" : "답변 등록"}</button>
-            <button type="button" className={subtleBtn} onClick={() => onSelectCar(car.id)}>이 차 고질병 보기</button>
+            <Button type="submit" size="sm" disabled={!answer.trim()}>{r.answer ? "답변 고치기" : "답변 등록"}</Button>
+            <Button type="button" variant="secondary" size="xs" onClick={() => onSelectCar(car.id)}>이 차 고질병 보기</Button>
           </div>
         </form>
       )}

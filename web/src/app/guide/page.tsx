@@ -4,8 +4,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PageBar } from "@/components/page-bar";
-import { Card, ErrorText, primaryBtn } from "@/components/ui";
+import { Card, ErrorText } from "@/components/ui";
 import { api, type AiMode, type RecommendResult } from "@/lib/api";
+import { Button } from "@/components/button";
 
 const MODE_TEXT: Record<Exclude<AiMode, "gemini">, string> = {
   mock: "목 모드: 실제 AI 대신 샘플 답변이 나와요 (USE_MOCK_AI=true)",
@@ -67,7 +68,7 @@ export default function GuidePage() {
               className="h-24 resize-none rounded-xl border border-field bg-white px-3.5 py-3 text-[15px] outline-none focus:border-primary"
             />
           </label>
-          <button className={primaryBtn} disabled={disabled || !request.trim()}>{loading ? "고르는 중…" : "추천받기"}</button>
+          <Button disabled={disabled || !request.trim()}>{loading ? "고르는 중…" : "추천받기"}</Button>
         </form>
         <ErrorText message={error} />
       </section>
