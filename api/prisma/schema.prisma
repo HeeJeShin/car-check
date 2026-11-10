@@ -37,6 +37,7 @@ model CarModel {
   powertrains      Powertrain[]
   issues           CarIssue[]
   inspectionPoints InspectionPoint[]
+  favorites        Favorite[]
   createdAt        DateTime          @default(now())
 
   @@index([maker, name])
@@ -187,6 +188,7 @@ model InspectionPoint {
 enum Role {
   ADMIN // 모든 수정 + "검증됨" 처리 + 삭제
   EDITOR // 초안 작성·수정만. "검증됨"으로 바꾸거나 검증된 정보를 고칠 수 없음
+  USER // 일반 사용자: 내 차량(즐겨찾기)만. 관리 기능은 쓸 수 없음
 }
 
 model User {
@@ -199,6 +201,19 @@ model User {
   lastLoginAt   DateTime       @default(now())
   histories     IssueHistory[]
   reportAnswers IssueReport[]
+  favorites     Favorite[]
+}
+
+// 내 차량(즐겨찾기). 연식 기준이라 세대(CarModel) 하나를 담습니다. 같은 차를 두 번 담을 수 없게 (사용자, 세대)가 기본 키입니다.
+model Favorite {
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  carModel   CarModel @relation(fields: [carModelId], references: [id], onDelete: Cascade)
+  carModelId Int
+  createdAt  DateTime @default(now())
+
+  @@id([userId, carModelId])
+  @@index([carModelId])
 }
 
 // ── 방문 통계 ──

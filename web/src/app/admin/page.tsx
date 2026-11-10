@@ -37,11 +37,11 @@ export default function AdminPage() {
   };
 
   if (user === undefined) return <Loading />;
-  if (!user) {
+  if (!user || user.role === "USER") {
     return (
       <>
         <PageBar back="/" backLabel="처음으로" title="데이터 관리" />
-        <AdminLogin onLogin={setUser} />
+        <AdminLogin onLogin={setUser} denied={user?.role === "USER"} />
       </>
     );
   }

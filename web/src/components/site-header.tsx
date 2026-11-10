@@ -16,6 +16,7 @@ export function SiteHeader() {
           <Link href="/#issues" className={navLink}>고질병</Link>
           <Link href="/#inspect" className={navLink}>매장 점검</Link>
           <Link href="/guide" className={navLink}>AI 차량 추천</Link>
+          <Link href="/my-cars" className="flex min-h-11 items-center px-2 text-sm font-medium hover:text-primary">내 차량</Link>
           <Link href="/cars" className="flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-white hover:bg-primary-hover">차종 찾기</Link>
         </nav>
       </div>

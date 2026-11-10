@@ -3,10 +3,10 @@
 //   1) 화면의 구글 로그인 버튼 → 구글이 ID 토큰(JWT)을 줌
 //   2) 화면이 그 토큰을 POST /auth/google로 보냄
 //   3) 여기서 구글 공개키로 서명·발급자·대상(우리 Client ID)·만료를 검사
-//   4) 이메일이 ADMIN_EMAILS·EDITOR_EMAILS에 있으면 역할을 주고, 우리 서비스용 토큰(12시간)을 발급
-// 목록에 없는 구글 계정은 로그인 자체를 거절합니다(누구나 가입하는 서비스가 아니라 관리자 전용이라서).
+//   4) 이메일이 ADMIN_EMAILS·EDITOR_EMAILS에 있으면 그 역할을, 없으면 USER(일반 사용자)를 주고 우리 서비스용 토큰을 발급
+// USER는 내 차량(즐겨찾기)만 쓸 수 있습니다. 쓰기 API는 AuthGuard가 기본으로 ADMIN만 열어 두므로 관리 기능은 막혀 있습니다.
 // ─────────────────────────────────────────────────────────────
-import { ForbiddenException, Injectable, Logger, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { createRemoteJWKSet, jwtVerify, SignJWT, type JWTVerifyGetKey } from "jose";
 import { randomBytes } from "node:crypto";
 import type { Role } from "../generated/prisma/client";
@@ -16,6 +16,7 @@ export type AuthUser = { id: number; email: string; name: string; picture: strin
 
 const GOOGLE_ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
 const TOKEN_TTL = "12h";
+const USER_TOKEN_TTL = "30d"; // 일반 사용자는 며칠 뒤 다시 와서 볼 수 있게. 권한이 내 차량뿐이라 관리자보다 길게 둡니다.
 
 @Injectable()
 export class AuthService {
@@ -69,9 +70,18 @@ export class AuthService {
     }
   }
 
+  /** 계정 삭제(개인정보처리방침의 삭제 권리). 내 차량은 함께 지워집니다. 관리자·에디터 계정은 .env로 관리하므로 여기서 지우지 않습니다. */
+  async deleteAccount(user: AuthUser) {
+    if (user.role !== "USER") throw new ForbiddenException("관리자·에디터 계정은 여기서 삭제할 수 없어요.");
+    // 예전에 에디터였던 계정은 심사 기록이 남아 있어 바로 지울 수 없습니다.
+    if (await this.prisma.issueHistory.count({ where: { userId: user.id } })) {
+      throw new ConflictException("심사 기록이 있는 계정은 이메일로 삭제를 요청해 주세요.");
+    }
+    await this.prisma.user.delete({ where: { id: user.id } });
+  }
+
   private async issue(email: string, name: string, picture: string | null) {
     const role = roleFor(email);
-    if (!role) throw new ForbiddenException(`${email} 계정은 관리 권한이 없습니다. 관리자에게 등록을 요청하세요.`);
     const user = await this.prisma.user.upsert({
       where: { email: email.toLowerCase() },
       create: { email: email.toLowerCase(), name, picture, role },
@@ -82,7 +92,7 @@ export class AuthService {
       .setSubject(String(user.id))
       .setIssuer("car-check")
       .setIssuedAt()
-      .setExpirationTime(TOKEN_TTL)
+      .setExpirationTime(user.role === "USER" ? USER_TOKEN_TTL : TOKEN_TTL)
       .sign(this.secret);
     return { token, user: { id: user.id, email: user.email, name: user.name, picture: user.picture, role: user.role } };
   }
@@ -102,13 +112,13 @@ export class AuthService {
   }
 }
 
-/** .env의 이메일 목록으로 역할 결정. 둘 다에 있으면 ADMIN. 목록에 없으면 null(로그인 불가). */
-export function roleFor(email: string): Role | null {
+/** .env의 이메일 목록으로 역할 결정. 둘 다에 있으면 ADMIN. 목록에 없으면 USER. */
+export function roleFor(email: string): Role {
   const list = (name: string) => (process.env[name] ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   const e = email.toLowerCase();
   if (list("ADMIN_EMAILS").includes(e)) return "ADMIN";
   if (list("EDITOR_EMAILS").includes(e)) return "EDITOR";
-  return null;
+  return "USER";
 }
 
 export const devLoginEnabled = () => process.env.AUTH_DEV_LOGIN === "true" && process.env.NODE_ENV !== "production";

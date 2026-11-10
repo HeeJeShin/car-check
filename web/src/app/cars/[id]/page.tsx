@@ -3,6 +3,7 @@
 // 서버 컴포넌트: 세대마다 화면을 처음 방문 때 만들어 두고 재사용합니다(ISR). 체크리스트와 "틀린 내용 있어요"만 브라우저에서 동작.
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FavoriteButton } from "@/components/favorite-button";
 import { ReportChecklist } from "@/components/report-checklist";
 import { ReportIssue } from "@/components/report-issue";
 import { PageBar } from "@/components/page-bar";
@@ -64,6 +65,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           )}
           <span className="rounded-lg bg-chip px-2.5 py-1.5 text-[13px] font-medium text-body">출처 있음 {verified} · 참고 {car.issues.length - verified}</span>
         </div>
+        <FavoriteButton carModelId={car.id} />
         {car.powertrains.length > 0 && (
           <ul className="flex flex-col gap-1 text-sm text-body">
             {car.powertrains.map((p) => (

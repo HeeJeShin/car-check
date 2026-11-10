@@ -61,10 +61,10 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 |---|---|---|
 | ADMIN | 모든 수정 + "출처 있음" 처리 + 삭제 + 차종 추가 | `ADMIN_EMAILS` |
 | EDITOR | 고질병 초안·점검 포인트 작성, 초안 수정, 검토 요청. 승인·반려·승인 취소·삭제는 불가 | `EDITOR_EMAILS` |
-| 그 외 구글 계정 | 로그인 거절 | |
+| USER | 내 차량(즐겨찾기)만 | 그 밖의 구글 계정 |
 
 - 쓰기 API는 **기본으로 ADMIN만** 열려 있고, 에디터도 되는 곳은 `@Roles("ADMIN", "EDITOR")`, 로그인 없이 되는 곳은 `@Public()`로 표시합니다(`api/src/auth/auth.guard.ts`). 새 API를 만들고 깜빡해도 열려 있지 않아요.
-- 비밀번호는 다루지 않습니다. 구글이 서명한 ID 토큰을 API가 검증하고(서명·발급자·우리 Client ID·만료·이메일 확인), 우리 서비스용 토큰(12시간)을 발급합니다.
+- 비밀번호는 다루지 않습니다. 구글이 서명한 ID 토큰을 API가 검증하고(서명·발급자·우리 Client ID·만료·이메일 확인), 우리 서비스용 토큰(관리자·에디터 12시간, 일반 사용자 30일)을 발급합니다.
 
 **구글 로그인 켜기** (한 번만)
 1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → 사용자 인증 정보 만들기 → **OAuth 클라이언트 ID** → 애플리케이션 유형 **웹 애플리케이션**
@@ -96,6 +96,8 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | `/generations/[maker]/[name]` | 세대·연식 선택: "올 뉴 투싼 (2015~2018)"처럼 고르기, 연식 입력으로 좁히기 |
 | `/cars/[id]` | 고질병 리포트: 엔진·미션 요약 → 고질병(출처 있음 먼저, 카드마다 **"틀린 내용 있어요" 제보**와 운영자 답변) → 매장 체크리스트(브라우저에 저장) → 공통 점검 |
 | `/cars/[id]/inspect` | 매장 점검 가이드: 스펙별 주의점(DCT → 저속 꿀렁거림 등) → 본넷 그림 + 빨간 동그라미 → 시운전 순서 |
+| `/privacy` | 개인정보처리방침. 저장 항목이나 외부 서비스가 바뀌면 함께 수정 |
+| `/my-cars` | 내 차량: 리포트에서 담아 둔 세대 목록. 담기를 누르면 구글 로그인 요청, 로그인 후 그대로 담김 |
 | `/guide` | AI 차량 추천: 원하는 조건을 한 문장으로 말하면 등록된 세대 중에서 차종·연식 추천 (→ 고질병 리포트로 연결) |
 | `/admin` | **구글 로그인 필요.** 방문 통계(일별 차트·많이 본 차종 TOP 10·들어온 곳·기기), 제보함(답변 달기), 차종·엔진 추가, 고질병 추가·검증·삭제, 이 차 본넷 점검 포인트 추가 |
 | `/robots.txt`, `/sitemap.xml` | 검색엔진용. 관리 화면만 막고, 차종·세대마다 리포트·점검 가이드 주소를 알려줌 (`NEXT_PUBLIC_SITE_URL`) |
@@ -144,6 +146,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | GET | `/health` | 서버·DB 상태 (배포 헬스체크) |
 | POST | `/health/sentry-test` | Sentry 연결 확인용 일부러 500 에러 🔒ADMIN |
 | GET | `/ai/status` | AI 모드 (`gemini` / `mock` / `off`) |
+| GET · PUT · DELETE | `/favorites` · `/favorites/:carModelId` | 내 차량 목록·담기·지우기 (로그인 필요) |
 | POST | `/ai/recommend` | 한 문장 조건으로 차종·연식 추천 |
 
 ## 테스트
