@@ -5,10 +5,10 @@ export function Card({ children, className = "" }: { children: React.ReactNode; 
   return <div className={`rounded-[14px] border border-line bg-white ${className}`}>{children}</div>;
 }
 
-/** 사용자 화면용: 검증됨 / 그 밖(초안·검토 중)은 "참고". 관리 화면은 상태를 그대로 보여줍니다(ReviewBadge). */
+/** 사용자 화면용: 출처 있음 / 그 밖(초안·검토 중)은 "참고". 관리 화면은 상태를 그대로 보여줍니다(ReviewBadge). */
 export function StatusBadge({ status }: { status: IssueStatus }) {
   return status === "VERIFIED" ? (
-    <span className="rounded-md bg-success-soft px-2 py-0.5 text-xs font-bold text-success">검증됨</span>
+    <span className="rounded-md bg-success-soft px-2 py-0.5 text-xs font-bold text-success">출처 있음</span>
   ) : (
     <span className="rounded-md bg-warning-soft px-2 py-0.5 text-xs font-bold text-warning">참고</span>
   );

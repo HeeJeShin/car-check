@@ -99,7 +99,7 @@ export type AdminIssue = CarIssue & {
   }[];
 };
 
-export const STATUS_LABEL: Record<IssueStatus, string> = { DRAFT: "초안", IN_REVIEW: "검토 중", VERIFIED: "검증됨", REJECTED: "반려" };
+export const STATUS_LABEL: Record<IssueStatus, string> = { DRAFT: "초안", IN_REVIEW: "검토 중", VERIFIED: "출처 있음", REJECTED: "반려" };
 
 export type CarReport = CarModel & {
   powertrains: Powertrain[];
@@ -125,8 +125,7 @@ export type AiMode = "gemini" | "mock" | "off";
 
 export type RecommendResult = {
   summary: string;
-  cars: { name: string; yearRange: string; why: string; watchOut: string; carModels: { id: number; label: string; maker: string; name: string }[] }[];
-  nextSteps: string[];
+  cars: { id: number; maker: string; label: string; yearRange: string; why: string; watchOut: string }[];
 };
 
 export const PARTS = ["엔진", "변속기", "전장", "하체", "차체", "기타"];

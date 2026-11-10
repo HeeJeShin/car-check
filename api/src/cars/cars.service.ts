@@ -20,6 +20,15 @@ export class CarsService {
     });
   }
 
+  /** AI 추천 후보: 등록된 세대 전체. 유지비 판단에 필요한 연료까지 한 줄로 줄여서 넘깁니다. */
+  async recommendCandidates() {
+    const rows = await this.prisma.carModel.findMany({
+      orderBy: [{ maker: "asc" }, { name: "asc" }, { yearFrom: "asc" }],
+      select: { id: true, maker: true, displayName: true, segment: true, bodyType: true, yearFrom: true, yearTo: true, powertrains: { select: { fuel: true } } },
+    });
+    return rows.map(({ powertrains, ...car }) => ({ ...car, fuels: [...new Set(powertrains.map((p) => p.fuel))] }));
+  }
+
   /**
    * "차종 선택" 화면: 세대를 차 이름 단위로 묶은 카드 목록.
    * 세대들을 한 번에 가져와 코드에서 이름별로 묶습니다. 차종이 늘어도 쿼리는 1번입니다.

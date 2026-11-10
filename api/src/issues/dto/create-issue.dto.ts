@@ -63,7 +63,7 @@ export class TransitionDto {
   @IsIn(STATUSES)
   to: (typeof STATUSES)[number];
 
-  @ApiPropertyOptional({ description: "반려·검증 취소 사유 (필수)", example: "출처가 개인 블로그 하나뿐이라 근거 부족" })
+  @ApiPropertyOptional({ description: "반려·승인 취소 사유 (필수)", example: "출처가 개인 블로그 하나뿐이라 근거 부족" })
   @IsOptional()
   @IsString()
   @IsNotEmpty()

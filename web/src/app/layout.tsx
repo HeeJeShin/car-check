@@ -10,15 +10,18 @@ import "./globals.css";
 // subsets는 "미리 불러올" 글자 범위일 뿐, 한글 글자 파일도 함께 포함됩니다.
 const plex = IBM_Plex_Sans_KR({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-plex" });
 
-const DESCRIPTION = "어떤 차를 골라야 할지, 매장에서 무엇을 봐야 할지, 내가 사려는 차의 연식별 고질병까지 알려드려요.";
+const DESCRIPTION = "중고차 추천부터 차종·연식별 중고차 고질병 확인, 매장 점검까지. 매장에서 바로 찾아보는 중고차 구매가이드예요.";
 
 // 검색엔진 소유 확인 코드: 네이버 서치어드바이저·구글 서치 콘솔에서 받은 값을 환경변수에 넣으면 <meta>로 붙습니다.
 const naverVerification = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "중구 — 중고차 구매가이드",
+  title: "중구 — 중고차 고질병 확인·중고차 추천",
   description: DESCRIPTION,
+  keywords: ["중고차 추천", "중고차 고질병", "중고차 구매가이드", "중고차 체크리스트", "연식별 고질병", "중고차 구매 요령"],
+  // 파비콘을 쓰지 않습니다. 브라우저가 /favicon.ico를 찾다가 404를 내지 않게 빈 값으로 둡니다.
+  icons: { icon: "data:," },
   openGraph: { type: "website", siteName: "중구 — 중고차 구매가이드", locale: "ko_KR", description: DESCRIPTION },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,

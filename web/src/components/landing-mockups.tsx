@@ -164,29 +164,27 @@ export function ChecklistScreen() {
   );
 }
 
-const QUESTIONS = ["첫 중고차, 뭐부터 알아봐요?", "딜러한테 뭘 물어봐야 해요?", "디젤 vs 가솔린, 뭐가 나아요?"];
-const PURPOSES = ["출퇴근", "가족", "캠핑·여행", "첫 차", "장거리"];
+const REQUESTS = ["돈이 적게 들었으면 해요", "유지비 적은 차 추천해 주세요", "초보라 주차 쉬운 차"];
 
 export function GuideScreen() {
   return (
     <>
-      <Bar title="AI 가이드" />
-      <div className="flex flex-none flex-col gap-1.5 bg-white px-3.5 pt-3.5">
+      <Bar title="AI 차량 추천" />
+      <div className="flex flex-none flex-col gap-1.5 bg-white px-3.5 pt-3.5 pb-1">
         <span className="text-[17px] leading-snug font-bold tracking-tight">아직 차를 못 정했어도 괜찮아요</span>
-        <div className="mt-1.5 flex">
-          <span className="flex-1 border-b-2 border-ink py-2 text-center text-[11px] font-bold">무엇부터 볼까요?</span>
-          <span className="flex-1 border-b-2 border-line py-2 text-center text-[11px] text-muted">용도별 추천</span>
-        </div>
+        <span className="text-[12px] text-body">원하는 조건을 한 문장으로 말해 주세요.</span>
       </div>
       <div className="flex flex-col gap-2 p-3">
-        {QUESTIONS.map((q) => (
-          <div key={q} className="rounded-[10px] border border-line bg-white p-3 text-[12px] font-medium">{q}</div>
+        {REQUESTS.map((q, i) => (
+          <div key={q} className={`rounded-[10px] border p-3 text-[12px] font-medium ${i === 1 ? "border-ink bg-ink text-white" : "border-line bg-white"}`}>{q}</div>
         ))}
-        <p className="mt-2 text-[12px] font-bold">어디에 많이 타세요?</p>
-        <div className="flex flex-wrap gap-1.5">
-          {PURPOSES.map((p, i) => (
-            <span key={p} className={`rounded-full border px-3 py-1.5 text-[11px] ${i === 3 ? "border-ink bg-ink font-bold text-white" : "border-field bg-white font-medium"}`}>{p}</span>
-          ))}
+        <div className="mt-1 rounded-[10px] border border-line bg-white p-3">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[13px] font-bold">올 뉴 아반떼</span>
+            <span className="text-[11px] text-muted">2016~2018</span>
+          </div>
+          <p className="mt-1 text-[11px] leading-relaxed text-body">연비가 좋아 유지비가 적은 편이에요.</p>
+          <p className="mt-1 text-[11px] font-medium text-primary">이 차 고질병 보기 →</p>
         </div>
       </div>
     </>

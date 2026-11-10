@@ -1,6 +1,6 @@
 "use client";
 // 데이터 관리: 방문 통계, 사용자 제보 답변, 차종(세대)·엔진 추가, 고질병 추가·검증·삭제, 본넷 점검 포인트 추가·삭제.
-// 직접 찾아본 정보를 넣는 곳입니다. "검증됨"은 출처 URL이 있어야 저장됩니다(서버 규칙).
+// 직접 찾아본 정보를 넣는 곳입니다. "출처 있음"은 출처 URL이 있어야 저장됩니다(서버 규칙).
 // 구글 로그인 필요. ADMIN은 전부, EDITOR는 초안 작성까지만(검증·삭제·차종 추가 버튼이 안 보임).
 // 버튼을 숨기는 건 편의일 뿐이고, 실제로 막는 건 API(auth.guard.ts, issues.service.ts)입니다.
 import { useEffect, useState } from "react";
@@ -97,7 +97,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
     }
   }
 
-  // 심사 버튼: 승인은 출처 URL, 반려·검증 취소는 사유를 물어본 뒤 보냅니다. 규칙은 서버가 다시 검사합니다.
+  // 심사 버튼: 승인은 출처 URL, 반려·승인 취소는 사유를 물어본 뒤 보냅니다. 규칙은 서버가 다시 검사합니다.
   async function transition(issue: AdminIssue, action: AdminIssue["actions"][number]) {
     const body: { to: IssueStatus; sourceUrl?: string; reason?: string } = { to: action.to };
     if (action.needs === "sourceUrl") {
@@ -131,7 +131,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
         <p className="text-sm text-muted">
           <strong className="text-ink">{user.name}</strong> ({user.email}) · {isAdmin ? "관리자: 모든 수정·검증·삭제" : "에디터: 초안 작성·수정만 (검증·삭제는 관리자)"}
         </p>
-        <p className="text-sm text-muted">직접 찾아본 정보를 넣고, 초안을 확인해서 &quot;검증됨&quot;으로 바꿔요.</p>
+        <p className="text-sm text-muted">직접 찾아본 정보를 넣고, 초안을 확인해서 &quot;출처 있음&quot;으로 바꿔요.</p>
         <ErrorText message={error} />
 
         <VisitStats />
@@ -164,7 +164,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">고질병</h2>
-          <p className="text-xs leading-relaxed text-muted">초안 → 검토 요청 → 관리자 승인(검증됨) 또는 반려. 반려된 정보는 사용자 화면에 안 보여요. 검토 중·검증된 정보는 초안으로 되돌린 뒤 고칠 수 있어요.</p>
+          <p className="text-xs leading-relaxed text-muted">초안 → 검토 요청 → 관리자 승인(출처 있음) 또는 반려. 반려된 정보는 사용자 화면에 안 보여요. 검토 중·검증된 정보는 초안으로 되돌린 뒤 고칠 수 있어요.</p>
           {issues.map((issue) => (
             <Card key={issue.id} className={`p-4 ${issue.status === "REJECTED" ? "opacity-70" : ""}`}>
               <div className="flex items-center gap-2">
