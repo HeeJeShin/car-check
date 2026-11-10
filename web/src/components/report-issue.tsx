@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { ApiError, REPORT_REASONS, type ReportReason, api } from "@/lib/api";
 import { fieldCls } from "@/components/ui";
+import { Button } from "@/components/button";
 
 const REASONS = Object.entries(REPORT_REASONS) as [ReportReason, string][];
 
@@ -77,16 +78,12 @@ export function ReportIssue({ issueId }: { issueId: number }) {
       />
       {error && <p className="text-sm text-danger-text">{error}</p>}
       <div className="flex gap-2">
-        <button type="button" onClick={() => setOpen(false)} className="flex-1 rounded-xl border border-field bg-white p-3 text-sm font-medium">
+        <Button type="button" variant="secondary" size="sm" className="flex-1" onClick={() => setOpen(false)}>
           취소
-        </button>
-        <button
-          type="submit"
-          disabled={sending || reasons.length === 0 || needsComment}
-          className="flex-1 rounded-xl bg-primary p-3 text-sm font-bold text-white hover:bg-primary-hover disabled:opacity-50"
-        >
+        </Button>
+        <Button type="submit" size="sm" className="flex-1" disabled={sending || reasons.length === 0 || needsComment}>
           {sending ? "보내는 중…" : "제보 보내기"}
-        </button>
+        </Button>
       </div>
     </form>
   );

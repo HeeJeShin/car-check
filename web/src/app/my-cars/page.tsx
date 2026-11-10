@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { LoginButtons } from "@/components/login-buttons";
 import { PageBar } from "@/components/page-bar";
-import { Card, ChevronRight, ErrorText, Loading, primaryBtn } from "@/components/ui";
+import { PageCard } from "@/components/page-card";
+import { Card, ChevronRight, ErrorText, Loading } from "@/components/ui";
 import { ApiError, api, loginToken, saveLoginToken, yearText, type Favorite } from "@/lib/api";
+import { Button, LinkButton } from "@/components/button";
 
 export default function MyCarsPage() {
   const [items, setItems] = useState<Favorite[] | null>(null);
@@ -69,11 +71,11 @@ export default function MyCarsPage() {
         right={items ? <button type="button" onClick={logout} className="min-h-11 px-2">로그아웃</button> : undefined}
       />
       {needLogin ? (
-        <section className="flex flex-col gap-4 p-5 pt-8">
+        <PageCard>
           <h1 className="text-xl font-bold">로그인하면 내 차량을 볼 수 있어요</h1>
           <p className="text-sm leading-relaxed text-body">고질병 리포트에서 담아 둔 차를 여기서 다시 볼 수 있어요.</p>
           <LoginButtons onLogin={load} />
-        </section>
+        </PageCard>
       ) : !items && !error ? (
         <Loading />
       ) : (
@@ -83,7 +85,7 @@ export default function MyCarsPage() {
             <div className="flex flex-col gap-4 py-10 text-center">
               <p className="text-base font-bold">아직 담은 차가 없어요</p>
               <p className="text-sm text-body">차종을 찾아 고질병 리포트에서 담아 보세요.</p>
-              <Link href="/cars" className={primaryBtn}>차종 찾기</Link>
+              <LinkButton href="/cars">차종 찾기</LinkButton>
             </div>
           )}
           {items?.map((car) => (
@@ -104,7 +106,7 @@ export default function MyCarsPage() {
                 <>
                   <p className="leading-relaxed">계정 정보와 담아 둔 차가 모두 지워지고 되돌릴 수 없어요.</p>
                   <div className="flex gap-2">
-                    <button type="button" onClick={deleteAccount} className="min-h-11 rounded-xl bg-primary px-4 font-bold text-white">계정 삭제 확인</button>
+                    <Button type="button" size="sm" onClick={deleteAccount}>계정 삭제 확인</Button>
                     <button type="button" onClick={() => setConfirmDelete(false)} className="min-h-11 px-3">취소</button>
                   </div>
                 </>

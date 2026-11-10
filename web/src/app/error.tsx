@@ -4,7 +4,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { PageBar } from "@/components/page-bar";
-import { primaryBtn } from "@/components/ui";
+import { Button } from "@/components/button";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <section className="flex flex-col gap-4 p-5 pt-10">
         <h1 className="text-xl font-bold">잠시 정보를 불러오지 못했어요</h1>
         <p className="text-sm leading-relaxed text-body">잠시 후 다시 시도해주세요.</p>
-        <button type="button" onClick={reset} className={primaryBtn}>다시 시도</button>
+        <Button type="button" onClick={reset}>다시 시도</Button>
       </section>
     </>
   );

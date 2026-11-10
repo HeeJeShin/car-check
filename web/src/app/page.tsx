@@ -1,8 +1,8 @@
 // 1. 첫 화면: 사이트 소개. 이 화면만 전체 너비를 씁니다(.landing-wide → app/layout.tsx).
 // 데이터가 필요 없는 정적 화면이라 서버 컴포넌트로 둡니다("use client" 없음).
-import Link from "next/link";
 import { BONNET_POINTS, ChecklistScreen, GenerationScreen, GuideScreen, InspectScreen, Phone, ReportScreen } from "@/components/landing-mockups";
 import { Logo } from "@/components/logo";
+import { LinkButton } from "@/components/button";
 
 const HERO_TAGS = [
   { text: "사고·침수 이력", className: "top-[14%] left-0" },
@@ -22,7 +22,6 @@ const POINT_POSITIONS = [
   "top-[70%] right-[6%]",
 ];
 
-const heroBtn = "inline-flex min-h-14 items-center justify-center rounded-full px-7 text-base font-bold";
 const sectionTitle = "break-keep text-[32px] leading-[1.25] font-bold tracking-tight sm:text-5xl sm:leading-[1.2]";
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -46,8 +45,8 @@ export default function MainPage() {
               매장에서 볼 곳까지 사러 가기 전에 확인하세요.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href="/cars" className={`${heroBtn} bg-primary text-white hover:bg-primary-hover`}>내 차 고질병 확인하기</Link>
-              <Link href="/guide" className={`${heroBtn} border border-field bg-white text-ink hover:bg-chip`}>아직 차를 못 정했어요</Link>
+              <LinkButton href="/cars" size="hero">내 차 고질병 확인하기</LinkButton>
+              <LinkButton href="/guide" variant="secondary" size="hero">아직 차를 못 정했어요</LinkButton>
             </div>
           </div>
 
@@ -111,7 +110,7 @@ export default function MainPage() {
             <Eyebrow>어떤 차를 살지 고민이라면</Eyebrow>
             <h2 className={sectionTitle}>아직 차를<br />못 정했어도 괜찮아요</h2>
             <p className="mt-5 text-base leading-relaxed text-body sm:text-lg">원하는 조건을 한 문장으로 말하면 AI가 맞는 차종과 연식을 추천해요.</p>
-            <Link href="/guide" className={`${heroBtn} mt-8 bg-ink text-white hover:bg-ink-hover`}>AI 추천 받기</Link>
+            <LinkButton href="/guide" variant="ink" size="hero" className="mt-8">AI 추천 받기</LinkButton>
           </div>
         </div>
       </section>
@@ -136,7 +135,7 @@ export default function MainPage() {
 
       <section className="mt-24 bg-primary px-5 py-20 text-center text-white sm:mt-32 sm:py-28">
         <h2 className={sectionTitle}>사러 가기 전,<br />3분이면 충분해요</h2>
-        <Link href="/cars" className={`${heroBtn} mt-9 bg-white text-primary hover:bg-primary-soft`}>내 차 고질병 확인하기</Link>
+        <LinkButton href="/cars" variant="inverse" size="hero" className="mt-9">내 차 고질병 확인하기</LinkButton>
       </section>
     </div>
   );

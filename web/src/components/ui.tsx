@@ -55,6 +55,4 @@ export function Pill({ on, onClick, children }: { on: boolean; onClick: () => vo
   );
 }
 
-export const primaryBtn = "block w-full rounded-xl bg-primary p-4 text-center text-base font-bold text-white hover:bg-primary-hover disabled:opacity-50";
-export const secondaryBtn = "block w-full rounded-xl border border-field bg-white p-3.5 text-center text-[15px] font-medium text-ink";
 export const fieldCls = "h-12 w-full rounded-xl border border-field bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary";

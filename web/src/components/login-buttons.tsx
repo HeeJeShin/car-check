@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Card, ErrorText, Loading, fieldCls } from "@/components/ui";
 import { api, saveLoginToken, type AuthConfig, type AuthUser } from "@/lib/api";
+import { Button } from "@/components/button";
 
 type LoginResult = { token: string; user: AuthUser };
 
@@ -91,7 +92,7 @@ export function LoginButtons({ onLogin, devPlaceholder = "테스트용 이메일
           <form onSubmit={devLogin} className="flex flex-col gap-2">
             <p className="text-sm font-bold">개발용 로그인 <span className="font-medium text-muted">(AUTH_DEV_LOGIN=true일 때만 보여요)</span></p>
             <input type="email" required placeholder={devPlaceholder} value={devEmail} onChange={(e) => setDevEmail(e.target.value)} className={fieldCls} />
-            <button className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white">이메일로 로그인</button>
+            <Button variant="ink" size="sm">이메일로 로그인</Button>
           </form>
         </Card>
       )}

@@ -2,12 +2,12 @@
 // ① 이 차 스펙 → 그래서 조심할 것  ② 본넷 그림 + 빨간 동그라미  ③ 시운전 순서
 // 서버 컴포넌트: 세대마다 화면을 처음 방문 때 만들어 두고 재사용합니다(ISR). 본넷 그림 선택만 브라우저에서 동작.
 import type { Metadata } from "next";
-import Link from "next/link";
 import { BonnetPoints } from "@/components/bonnet-points";
 import { PageBar } from "@/components/page-bar";
-import { Card, primaryBtn } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { TRANSMISSION_LABEL, yearText, type Inspection } from "@/lib/api";
 import { cachedApi } from "@/lib/cached";
+import { LinkButton } from "@/components/button";
 
 export const revalidate = 3600;
 
@@ -131,7 +131,7 @@ export default async function InspectPage({ params }: { params: Promise<{ id: st
       </section>
 
       <section className="px-5 pt-3 pb-8">
-        <Link href={`${back}#checklist`} className={primaryBtn}>체크리스트로 돌아가기</Link>
+        <LinkButton href={`${back}#checklist`}>체크리스트로 돌아가기</LinkButton>
       </section>
     </>
   );
