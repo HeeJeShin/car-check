@@ -199,6 +199,7 @@ model User {
   role          Role
   createdAt     DateTime       @default(now())
   lastLoginAt   DateTime       @default(now())
+  agreedAt      DateTime? // 회원가입 때 개인정보 수집·이용에 동의한 시각. 관리자·에디터는 비어 있을 수 있음
   histories     IssueHistory[]
   reportAnswers IssueReport[]
   favorites     Favorite[]

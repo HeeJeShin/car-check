@@ -139,7 +139,7 @@ export type Role = "ADMIN" | "EDITOR" | "USER";
 export type AuthUser = { id: number; email: string; name: string; picture: string | null; role: Role };
 /** 내 차량(즐겨찾기) 한 대. id는 세대(CarModel) id */
 export type Favorite = { id: number; maker: string; name: string; displayName: string; yearFrom: number; yearTo: number | null; issueCount: number; savedAt: string };
-export type AuthConfig = { googleClientId: string | null; devLogin: boolean };
+export type AuthConfig = { googleClientId: string | null };
 
 const TOKEN_KEY = "jungu-admin-token";
 export function loginToken(): string | null {
@@ -178,7 +178,7 @@ export async function api<T>(path: string, init?: RequestInit & { json?: unknown
       body: init?.json !== undefined ? JSON.stringify(init.json) : init?.body,
     });
   } catch {
-    throw new Error(`API 서버(${API_URL})에 연결할 수 없습니다. pnpm dev로 API를 실행했는지 확인하세요.`);
+    throw new Error("서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.");
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({}));

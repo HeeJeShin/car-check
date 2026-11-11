@@ -59,6 +59,13 @@ body {
   font-family: var(--font-sans);
 }
 
+/* PC는 모든 화면을 흰 배경으로 통일합니다. 모바일의 회색 구역은 화면 구분용입니다. */
+@media (min-width: 48rem) {
+  body {
+    background: white;
+  }
+}
+
 /* 메인 화면 전용 장식 */
 .blueprint {
   background-image:

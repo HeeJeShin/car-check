@@ -42,13 +42,14 @@ export function ChevronRight({ className = "" }: { className?: string }) {
 }
 
 /** 알약 모양 선택 버튼 (제조사 탭, 용도 칩) */
-export function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+export function Pill({ on, onClick, disabled, children }: { on: boolean; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className={`min-h-11 rounded-full border px-4 text-sm ${on ? "border-ink bg-ink font-bold text-white" : "border-field bg-white font-medium text-ink"}`}
+      disabled={disabled}
+      className={`min-h-11 rounded-full border px-4 text-sm disabled:opacity-50 ${on ? "border-ink bg-ink font-bold text-white" : "border-field bg-white font-medium text-ink"}`}
     >
       {children}
     </button>

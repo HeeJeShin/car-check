@@ -3,7 +3,7 @@
 //   DB  : car_check_e2e (개발용 car_check와 별개. 매번 샘플 데이터로 다시 채움)
 //   API : http://localhost:3290  (개발 서버 3200과 안 겹치게)
 //   화면: http://localhost:3291  (운영 빌드로 띄워 ISR까지 실제처럼)
-// 로그인은 개발용 이메일 로그인(AUTH_DEV_LOGIN)을 씁니다. 구글 계정 없이 ADMIN·EDITOR를 오갈 수 있어요.
+// 로그인은 tests/google-login.ts의 구글 로그인 대역을 씁니다. 구글 계정 없이 ADMIN·EDITOR를 오갈 수 있어요.
 // ─────────────────────────────────────────────────────────────
 import { defineConfig, devices } from "@playwright/test";
 

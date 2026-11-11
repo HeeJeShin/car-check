@@ -2,16 +2,10 @@
 // + 검색엔진용 robots.txt · sitemap.xml
 import { type Page, expect, test } from "@playwright/test";
 import { ADMIN } from "../playwright.config";
+import { loginToAdmin } from "./google-login";
 
 const COMMENT = `[E2E] 리콜 조치가 끝난 차는 해당 없어요 ${Date.now()}`;
 const ANSWER = `[E2E] 확인했어요. 조치 완료 여부를 확인하라는 문구로 고쳤습니다 ${Date.now()}`;
-
-async function login(page: Page, email: string) {
-  await page.goto("/admin");
-  await page.getByPlaceholder(/ADMIN_EMAILS/).fill(email);
-  await page.getByRole("button", { name: "이메일로 로그인" }).click();
-  await expect(page.getByText(email)).toBeVisible();
-}
 
 async function openIoniq5Report(page: Page) {
   await page.goto("/cars");
@@ -37,7 +31,7 @@ test("틀린 내용 제보 → 관리자 답변 → 사용자 리포트에 답�
   await expect(card.getByText(/고마워요!/)).toBeVisible();
 
   // 2. 관리자: 제보함에서 그 제보를 찾아 답변
-  await login(page, ADMIN);
+  await loginToAdmin(page, ADMIN);
   const inbox = page.locator("section", { has: page.getByRole("heading", { name: /제보함/ }) });
   const reportCard = inbox.locator("div.rounded-\\[14px\\]", { hasText: COMMENT });
   await expect(reportCard.getByText("이미 해결됐어요 (리콜·개선품)")).toBeVisible();

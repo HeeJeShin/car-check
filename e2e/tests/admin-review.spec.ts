@@ -1,15 +1,9 @@
 // 관리자 흐름: 에디터가 초안 작성·검토 요청 → 관리자가 승인 → 사용자 리포트에 "출처 있음"으로 바로 보임(ISR 갱신)
 import { type Page, expect, test } from "@playwright/test";
 import { ADMIN, EDITOR } from "../playwright.config";
+import { loginToAdmin } from "./google-login";
 
 const TITLE = `[E2E] 충전구 덮개 파손 ${Date.now()}`;
-
-async function login(page: Page, email: string) {
-  await page.goto("/admin");
-  await page.getByPlaceholder(/ADMIN_EMAILS/).fill(email);
-  await page.getByRole("button", { name: "이메일로 로그인" }).click();
-  await expect(page.getByText(email)).toBeVisible();
-}
 
 // 관리 화면에서 아이오닉 5 (NE) 고르기. 차종 id는 DB마다 다르니 보이는 이름으로 찾음
 async function selectIoniq5(page: Page) {
@@ -36,7 +30,7 @@ test("에디터 초안 → 검토 요청 → 관리자 승인 → 사용자 화�
   await expect(page.locator("article", { hasText: TITLE })).toHaveCount(0);
 
   // 1. 에디터: 초안 작성 후 검토 요청. 승인 버튼은 안 보임
-  await login(page, EDITOR);
+  await loginToAdmin(page, EDITOR);
   await expect(page.getByText(/에디터: 초안 작성·수정만/)).toBeVisible();
   await selectIoniq5(page);
   await page.getByPlaceholder("제목 (예: 7단 DCT 저속 변속 충격)").fill(TITLE);
@@ -52,7 +46,7 @@ test("에디터 초안 → 검토 요청 → 관리자 승인 → 사용자 화�
   await page.getByRole("button", { name: "로그아웃" }).click();
 
   // 2. 관리자: 승인 (출처 URL을 물어보는 창에 입력)
-  await login(page, ADMIN);
+  await loginToAdmin(page, ADMIN);
   await selectIoniq5(page);
   page.once("dialog", (d) => d.accept("https://www.car.go.kr/e2e-source"));
   await issueCard(page).getByRole("button", { name: "승인 (출처 있음)" }).click();

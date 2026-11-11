@@ -4,13 +4,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PageBar } from "@/components/page-bar";
-import { Card, ErrorText } from "@/components/ui";
+import { Card, ErrorText, Pill } from "@/components/ui";
 import { api, type AiMode, type RecommendResult } from "@/lib/api";
 import { Button } from "@/components/button";
 
 const MODE_TEXT: Record<Exclude<AiMode, "gemini">, string> = {
-  mock: "목 모드: 실제 AI 대신 샘플 답변이 나와요 (USE_MOCK_AI=true)",
-  off: "AI가 꺼져 있어요. api/.env에 GEMINI_API_KEY를 넣거나 USE_MOCK_AI=true로 바꾸면 쓸 수 있어요. 차종 검색·고질병은 AI 없이도 돼요.",
+  mock: "지금은 실제 AI 대신 샘플 답변이 나와요.",
+  off: "지금은 AI 추천을 쓸 수 없어요. 차종 찾기와 고질병 확인은 그대로 쓸 수 있어요.",
 };
 
 const EXAMPLES = ["돈이 적게 들었으면 해요", "유지비 적은 차 추천해 주세요", "가족 4명이 탈 SUV", "초보라 주차 쉬운 차"];
@@ -52,9 +52,7 @@ export default function GuidePage() {
         <ErrorText message={statusError} />
         <div className="flex flex-wrap gap-2">
           {EXAMPLES.map((q) => (
-            <button key={q} type="button" disabled={disabled} onClick={() => { setRequest(q); recommend(q); }} className="min-h-10 rounded-full border border-field bg-white px-3 text-[13px] disabled:opacity-50">
-              {q}
-            </button>
+            <Pill key={q} on={false} disabled={disabled} onClick={() => { setRequest(q); recommend(q); }}>{q}</Pill>
           ))}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); recommend(request); }} className="flex flex-col gap-3">

@@ -4,6 +4,7 @@
 //   2) 화면이 그 토큰을 POST /auth/google로 보냄
 //   3) 여기서 구글 공개키로 서명·발급자·대상(우리 Client ID)·만료를 검사
 //   4) 이메일이 ADMIN_EMAILS·EDITOR_EMAILS에 있으면 그 역할을, 없으면 USER(일반 사용자)를 주고 우리 서비스용 토큰을 발급
+//      일반 사용자는 회원가입(POST /auth/google/signup)을 해야 계정이 만들어지고, 그 전에는 로그인이 404입니다.
 // USER는 내 차량(즐겨찾기)만 쓸 수 있습니다. 쓰기 API는 AuthGuard가 기본으로 ADMIN만 열어 두므로 관리 기능은 막혀 있습니다.
 // ─────────────────────────────────────────────────────────────
 import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, UnauthorizedException } from "@nestjs/common";
@@ -13,6 +14,8 @@ import type { Role } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
 export type AuthUser = { id: number; email: string; name: string; picture: string | null; role: Role };
+
+type Profile = { email: string; name: string; picture: string | null };
 
 const GOOGLE_ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
 const TOKEN_TTL = "12h";
@@ -30,15 +33,25 @@ export class AuthService {
     this.secret = new TextEncoder().encode(this.loadSecret());
   }
 
-  /** 화면에 알려줄 설정: 구글 로그인 버튼에 쓸 Client ID, 개발용 로그인이 켜져 있는지 */
+  /** 화면에 알려줄 설정: 구글 로그인 버튼에 쓸 Client ID */
   config() {
-    return { googleClientId: process.env.GOOGLE_CLIENT_ID || null, devLogin: devLoginEnabled() };
+    return { googleClientId: process.env.GOOGLE_CLIENT_ID || null };
   }
 
-  /** 구글 ID 토큰 → 우리 토큰 */
+  /** 로그인: 가입한 계정만. 관리자·에디터는 이메일 목록으로 정해지므로 가입 없이 들어옵니다. */
   async loginWithGoogle(credential: string) {
+    return this.issue(await this.verifyGoogle(credential), false);
+  }
+
+  /** 회원가입: 개인정보 수집·이용 동의(컨트롤러에서 확인)를 받은 뒤 계정을 만듭니다. 이미 가입했으면 그대로 로그인됩니다. */
+  async signupWithGoogle(credential: string) {
+    return this.issue(await this.verifyGoogle(credential), true);
+  }
+
+  /** 구글 ID 토큰 검사 → 프로필 */
+  private async verifyGoogle(credential: string): Promise<Profile> {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (!clientId) throw new NotFoundException("구글 로그인이 설정되지 않았습니다. .env에 GOOGLE_CLIENT_ID를 넣으세요.");
+    if (!clientId) throw new NotFoundException("지금은 구글 로그인을 쓸 수 없어요.");
     let payload;
     try {
       ({ payload } = await jwtVerify(credential, this.googleKeys, { issuer: GOOGLE_ISSUERS, audience: clientId }));
@@ -49,13 +62,13 @@ export class AuthService {
     if (typeof payload.email !== "string" || payload.email_verified !== true) {
       throw new UnauthorizedException("이메일이 확인된 구글 계정만 로그인할 수 있습니다.");
     }
-    return this.issue(payload.email, String(payload.name ?? payload.email), typeof payload.picture === "string" ? payload.picture : null);
+    return { email: payload.email, name: String(payload.name ?? payload.email), picture: typeof payload.picture === "string" ? payload.picture : null };
   }
 
-  /** 개발용 로그인: 구글 설정 없이 이메일만으로. AUTH_DEV_LOGIN=true이고 운영 환경이 아닐 때만. */
+  /** E2E 테스트 전용 로그인: 화면에는 없고, AUTH_DEV_LOGIN=true이고 운영 환경이 아닐 때만 동작합니다. */
   async loginForDev(email: string) {
     if (!devLoginEnabled()) throw new NotFoundException();
-    return this.issue(email, email.split("@")[0], null);
+    return this.issue({ email, name: email.split("@")[0], picture: null }, true);
   }
 
   /** 요청의 Bearer 토큰 → 로그인한 사람. 토큰이 없거나 틀리면 null. */
@@ -70,22 +83,26 @@ export class AuthService {
     }
   }
 
-  /** 계정 삭제(개인정보처리방침의 삭제 권리). 내 차량은 함께 지워집니다. 관리자·에디터 계정은 .env로 관리하므로 여기서 지우지 않습니다. */
+  /** 회원탈퇴(개인정보처리방침의 삭제 권리). 내 차량은 함께 지워집니다. 관리자·에디터 계정은 .env로 관리하므로 여기서 지우지 않습니다. */
   async deleteAccount(user: AuthUser) {
-    if (user.role !== "USER") throw new ForbiddenException("관리자·에디터 계정은 여기서 삭제할 수 없어요.");
+    if (user.role !== "USER") throw new ForbiddenException("관리자·에디터 계정은 여기서 탈퇴할 수 없어요.");
     // 예전에 에디터였던 계정은 심사 기록이 남아 있어 바로 지울 수 없습니다.
     if (await this.prisma.issueHistory.count({ where: { userId: user.id } })) {
-      throw new ConflictException("심사 기록이 있는 계정은 이메일로 삭제를 요청해 주세요.");
+      throw new ConflictException("심사 기록이 있는 계정은 이메일로 탈퇴를 요청해 주세요.");
     }
     await this.prisma.user.delete({ where: { id: user.id } });
   }
 
-  private async issue(email: string, name: string, picture: string | null) {
+  private async issue({ email, name, picture }: Profile, signup: boolean) {
     const role = roleFor(email);
+    if (role === "USER" && !signup && !(await this.prisma.user.findUnique({ where: { email: email.toLowerCase() }, select: { id: true } }))) {
+      throw new NotFoundException("가입된 계정이 없어요.");
+    }
+    const agreedAt = signup ? new Date() : null;
     const user = await this.prisma.user.upsert({
       where: { email: email.toLowerCase() },
-      create: { email: email.toLowerCase(), name, picture, role },
-      update: { name, picture, role, lastLoginAt: new Date() },
+      create: { email: email.toLowerCase(), name, picture, role, agreedAt },
+      update: { name, picture, role, lastLoginAt: new Date(), ...(agreedAt && { agreedAt }) },
     });
     const token = await new SignJWT({ role: user.role })
       .setProtectedHeader({ alg: "HS256" })

@@ -2,7 +2,7 @@
 // 리포트의 "내 차량에 담기". 로그인하지 않았으면 로그인 창을 띄우고, 로그인이 끝나면 페이지를 옮기지 않고 그대로 담습니다.
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LoginButtons } from "@/components/login-buttons";
+import { AuthPanel } from "@/components/auth-panel";
 import { ErrorText } from "@/components/ui";
 import { ApiError, api, loginToken, saveLoginToken, type Favorite } from "@/lib/api";
 
@@ -90,7 +90,7 @@ function LoginSheet({ onClose, onLogin }: { onClose: () => void; onLogin: () => 
           </button>
         </div>
         <p className="text-sm leading-relaxed text-body">담아 둔 차는 내 차량에서 언제든 다시 볼 수 있어요.</p>
-        <LoginButtons onLogin={onLogin} />
+        <AuthPanel onLogin={onLogin} />
       </div>
     </div>
   );

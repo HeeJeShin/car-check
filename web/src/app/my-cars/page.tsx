@@ -2,8 +2,8 @@
 // 내 차량: 리포트에서 담아 둔 차(세대) 목록. 로그인해야 볼 수 있습니다.
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { LoginButtons } from "@/components/login-buttons";
-import { PageBar } from "@/components/page-bar";
+import { AuthPanel } from "@/components/auth-panel";
+import { PageBar, PcPageTitle } from "@/components/page-bar";
 import { PageCard } from "@/components/page-card";
 import { Card, ChevronRight, ErrorText, Loading } from "@/components/ui";
 import { ApiError, api, loginToken, saveLoginToken, yearText, type Favorite } from "@/lib/api";
@@ -67,19 +67,19 @@ export default function MyCarsPage() {
         back="/"
         backLabel="처음으로"
         title="내 차량"
-        keepOnPc={!!items}
         right={items ? <button type="button" onClick={logout} className="min-h-11 px-2">로그아웃</button> : undefined}
       />
       {needLogin ? (
         <PageCard>
           <h1 className="text-xl font-bold">로그인하면 내 차량을 볼 수 있어요</h1>
           <p className="text-sm leading-relaxed text-body">고질병 리포트에서 담아 둔 차를 여기서 다시 볼 수 있어요.</p>
-          <LoginButtons onLogin={load} />
+          <AuthPanel onLogin={load} />
         </PageCard>
       ) : !items && !error ? (
         <Loading />
       ) : (
         <section className="flex flex-col gap-2.5 p-5">
+          {items && <PcPageTitle title="내 차량" right={<button type="button" onClick={logout} className="min-h-11 px-2">로그아웃</button>} />}
           <ErrorText message={error} />
           {items?.length === 0 && (
             <div className="flex flex-col gap-4 py-10 text-center">
@@ -106,12 +106,12 @@ export default function MyCarsPage() {
                 <>
                   <p className="leading-relaxed">계정 정보와 담아 둔 차가 모두 지워지고 되돌릴 수 없어요.</p>
                   <div className="flex gap-2">
-                    <Button type="button" size="sm" onClick={deleteAccount}>계정 삭제 확인</Button>
+                    <Button type="button" size="sm" onClick={deleteAccount}>회원탈퇴 확인</Button>
                     <button type="button" onClick={() => setConfirmDelete(false)} className="min-h-11 px-3">취소</button>
                   </div>
                 </>
               ) : (
-                <button type="button" onClick={() => setConfirmDelete(true)} className="min-h-11 self-start underline">내 계정 삭제</button>
+                <button type="button" onClick={() => setConfirmDelete(true)} className="min-h-11 self-start underline">회원탈퇴</button>
               )}
             </div>
           )}

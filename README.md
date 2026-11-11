@@ -61,7 +61,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 |---|---|---|
 | ADMIN | 모든 수정 + "출처 있음" 처리 + 삭제 + 차종 추가 | `ADMIN_EMAILS` |
 | EDITOR | 고질병 초안·점검 포인트 작성, 초안 수정, 검토 요청. 승인·반려·승인 취소·삭제는 불가 | `EDITOR_EMAILS` |
-| USER | 내 차량(즐겨찾기)만 | 그 밖의 구글 계정 |
+| USER | 내 차량(즐겨찾기)만 | 그 밖의 구글 계정 (회원가입 필요) |
 
 - 쓰기 API는 **기본으로 ADMIN만** 열려 있고, 에디터도 되는 곳은 `@Roles("ADMIN", "EDITOR")`, 로그인 없이 되는 곳은 `@Public()`로 표시합니다(`api/src/auth/auth.guard.ts`). 새 API를 만들고 깜빡해도 열려 있지 않아요.
 - 비밀번호는 다루지 않습니다. 구글이 서명한 ID 토큰을 API가 검증하고(서명·발급자·우리 Client ID·만료·이메일 확인), 우리 서비스용 토큰(관리자·에디터 12시간, 일반 사용자 30일)을 발급합니다.
@@ -71,7 +71,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 2. **승인된 JavaScript 원본**에 `http://localhost:3201` 추가 (배포하면 실제 화면 주소도)
 3. 발급된 **클라이언트 ID**를 `api/.env`의 `GOOGLE_CLIENT_ID`에 넣고 API 다시 시작 (클라이언트 보안 비밀번호는 필요 없음)
 
-구글 설정 전에도 `AUTH_DEV_LOGIN=true`면 관리 화면에서 **이메일만으로 로그인**할 수 있어요(개발·테스트용, 운영 환경에서는 항상 꺼짐). 이메일은 `ADMIN_EMAILS`·`EDITOR_EMAILS`에 있어야 합니다.
+`AUTH_DEV_LOGIN=true`는 E2E 테스트 전용 로그인 API를 켭니다. 화면에는 나오지 않고, 운영 환경에서는 항상 꺼져 있습니다.
 
 ## 고질병 심사 흐름
 
@@ -131,7 +131,7 @@ pnpm dev                  # API http://localhost:3200 (문서 /docs) + 화면 ht
 | GET | `/cars/:id` | 리포트: 세대 + 엔진·미션 + 주의점 + 고질병 + 공통 점검 |
 | GET | `/cars/:id/inspection` | 점검 가이드: 주의점 + 본넷 포인트 + 시운전 순서 |
 | GET | `/cars` | 세대 전체 (관리용) |
-| GET · POST | `/auth/config`, `/auth/google`, `/auth/dev`, `/auth/me` | 로그인 설정 · 구글 로그인 · 개발용 로그인 · 내 정보 |
+| GET · POST | `/auth/config`, `/auth/google`, `/auth/google/signup`, `/auth/dev`, `/auth/me` | 로그인 설정 · 구글 로그인 · 회원가입(동의 필수) · E2E 전용 로그인 · 내 정보 |
 | POST | `/cars` | 세대 + 엔진·미션 추가 🔒ADMIN |
 | GET | `/issues?carModelId=2` | 관리 화면: 반려 포함 전부 + 이력 + 내가 누를 수 있는 심사 버튼 🔒ADMIN·EDITOR |
 | POST · PATCH | `/issues`, `/issues/:id` | 고질병 추가(항상 초안)·내용 수정(초안·반려만) 🔒ADMIN·EDITOR |
