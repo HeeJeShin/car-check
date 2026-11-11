@@ -108,7 +108,7 @@ export class AiService {
     const mode = this.mode();
     if (mode === "off") {
       // 503: 서버는 살아 있지만 이 기능은 지금 쓸 수 없음
-      throw new ServiceUnavailableException("AI 기능이 꺼져 있습니다. .env에 GEMINI_API_KEY를 넣거나 USE_MOCK_AI=true로 바꾸세요.");
+      throw new ServiceUnavailableException("지금은 AI 추천을 쓸 수 없어요.");
     }
     return mode;
   }

@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, HttpCode, Post, UnauthorizedException } from "@nestjs/common";
 import { ApiProperty, ApiTags } from "@nestjs/swagger";
-import { IsEmail, IsNotEmpty, IsString } from "class-validator";
+import { Equals, IsEmail, IsNotEmpty, IsString } from "class-validator";
 import { CurrentUser, Public, Roles } from "./auth.guard";
 import { type AuthUser, AuthService } from "./auth.service";
 
@@ -9,6 +9,12 @@ class GoogleLoginDto {
   @IsString()
   @IsNotEmpty()
   credential: string;
+}
+
+class GoogleSignupDto extends GoogleLoginDto {
+  @ApiProperty({ description: "개인정보 수집·이용 동의 (필수)", example: true })
+  @Equals(true, { message: "개인정보 수집·이용에 동의해야 가입할 수 있어요." })
+  agreed: boolean;
 }
 
 class DevLoginDto {
@@ -22,7 +28,7 @@ class DevLoginDto {
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  @Get("config") // 화면이 구글 버튼·개발용 로그인을 보여줄지 정하는 데 씁니다.
+  @Get("config") // 화면이 구글 버튼을 그리는 데 씁니다.
   config() {
     return this.auth.config();
   }
@@ -35,13 +41,20 @@ export class AuthController {
   }
 
   @Public()
-  @Post("dev") // AUTH_DEV_LOGIN=true일 때만 (운영 환경에서는 항상 404)
+  @Post("google/signup")
+  @HttpCode(200)
+  signup(@Body() dto: GoogleSignupDto) {
+    return this.auth.signupWithGoogle(dto.credential);
+  }
+
+  @Public()
+  @Post("dev") // E2E 테스트 전용. AUTH_DEV_LOGIN=true일 때만 (운영 환경에서는 항상 404)
   @HttpCode(200)
   dev(@Body() dto: DevLoginDto) {
     return this.auth.loginForDev(dto.email);
   }
 
-  @Delete("me") // 내 계정 삭제 (내 차량도 함께 삭제)
+  @Delete("me") // 회원탈퇴 (내 차량도 함께 삭제)
   @Roles("ADMIN", "EDITOR", "USER")
   @HttpCode(204)
   deleteMe(@CurrentUser() user: AuthUser) {

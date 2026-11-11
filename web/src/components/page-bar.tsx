@@ -1,6 +1,6 @@
 // 모바일 안쪽 화면의 상단 줄: 뒤로 가기 + 가운데 제목 + 닫기(처음으로).
 // 이 줄이 있으면 모바일에서는 공통 헤더 대신 이것만 보입니다(.page-bar → SiteHeader). PC에서는 공통 헤더만 보입니다.
-// 로그아웃처럼 PC에서도 필요한 내용이 있으면 keepOnPc를 켭니다(공통 헤더 아래에 제목과 right만 표시).
+// PC에서 필요한 제목과 동작은 공통 헤더 아래에 줄을 만들지 않고 본문의 PcPageTitle에 둡니다.
 import Link from "next/link";
 
 type Props = {
@@ -11,15 +11,14 @@ type Props = {
   step?: string;
   /** 닫기 버튼 대신 오른쪽에 둘 내용 */
   right?: React.ReactNode;
-  keepOnPc?: boolean;
 };
 
 const iconBtn = "flex h-11 w-11 items-center justify-center text-ink";
 
-export function PageBar({ back, backLabel, title, step, right, keepOnPc = false }: Props) {
+export function PageBar({ back, backLabel, title, step, right }: Props) {
   return (
-    <div className={`page-bar sticky top-0 z-30 grid h-16 grid-cols-[1fr_auto_1fr] items-center border-b border-line bg-white/90 px-2 backdrop-blur ${keepOnPc ? "md:static md:flex md:justify-between md:px-5" : "md:hidden"}`}>
-      <Link href={back} aria-label={backLabel} className={`${iconBtn} justify-self-start md:hidden`}>
+    <div className="page-bar sticky top-0 z-30 grid h-16 grid-cols-[1fr_auto_1fr] items-center border-b border-line bg-white/90 px-2 backdrop-blur md:hidden">
+      <Link href={back} aria-label={backLabel} className={`${iconBtn} justify-self-start`}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" />
         </svg>
@@ -38,6 +37,16 @@ export function PageBar({ back, backLabel, title, step, right, keepOnPc = false 
             </Link>
           ))}
       </div>
+    </div>
+  );
+}
+
+/** PC 본문의 제목 줄. 모바일에서는 PageBar가 같은 역할을 하므로 숨깁니다. */
+export function PcPageTitle({ title, right }: { title: string; right?: React.ReactNode }) {
+  return (
+    <div className="hidden items-center justify-between md:flex">
+      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+      {right && <div className="text-[13px] text-muted">{right}</div>}
     </div>
   );
 }

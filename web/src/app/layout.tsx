@@ -36,7 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko" className={plex.variable}>
       <body className="group/site flex min-h-dvh flex-col antialiased">
         <SiteHeader />
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)] has-[.admin-wide]:max-w-6xl has-[.landing-wide]:max-w-none has-[.landing-wide]:shadow-none has-[.page-card]:max-w-none has-[.page-card]:bg-white has-[.page-card]:shadow-none">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col bg-ground shadow-[0_0_0_1px_var(--color-line)] md:bg-white md:shadow-none has-[.admin-wide]:max-w-6xl has-[.landing-wide]:max-w-none has-[.landing-wide]:shadow-none has-[.page-card]:max-w-none has-[.page-card]:bg-white has-[.page-card]:shadow-none">
           {children}
         </div>
         <SiteFooter />

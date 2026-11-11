@@ -9,7 +9,7 @@ import { AdminLogin } from "@/components/admin-login";
 import { Button } from "@/components/button";
 import { BonnetDiagram } from "@/components/bonnet-diagram";
 import { VisitStats } from "@/components/visit-stats";
-import { PageBar } from "@/components/page-bar";
+import { PageBar, PcPageTitle } from "@/components/page-bar";
 import { Card, ErrorText, Loading, SeverityText, fieldCls } from "@/components/ui";
 import {
   ApiError, BODY_LABEL, FUEL_LABEL, PARTS, REPORT_REASONS, STATUS_LABEL, TRANSMISSION_LABEL, api, loginToken, saveLoginToken, yearText,
@@ -123,12 +123,12 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
         back="/"
         backLabel="처음으로"
         title="데이터 관리"
-        keepOnPc
         right={<button type="button" onClick={onLogout} className="min-h-11 underline">로그아웃</button>}
       />
       <div className="flex flex-col gap-8 p-5 lg:p-8">
+        <PcPageTitle title="데이터 관리" right={<button type="button" onClick={onLogout} className="min-h-11 underline">로그아웃</button>} />
         <p className="text-sm text-muted">
-          <strong className="text-ink">{user.name}</strong> ({user.email}) · {isAdmin ? "관리자: 모든 수정·검증·삭제" : "에디터: 초안 작성·수정만 (검증·삭제는 관리자)"}
+          <strong className="text-ink">{user.name}</strong> ({user.email}) · {isAdmin ? "관리자: 모든 수정·승인·삭제" : "에디터: 초안 작성·수정만 (승인·삭제는 관리자)"}
         </p>
         <p className="text-sm text-muted">직접 찾아본 정보를 넣고, 초안을 확인해서 &quot;출처 있음&quot;으로 바꿔요.</p>
         <ErrorText message={error} />
@@ -163,7 +163,7 @@ function AdminConsole({ user, onLogout }: { user: AuthUser; onLogout: () => void
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">고질병</h2>
-          <p className="text-xs leading-relaxed text-muted">초안 → 검토 요청 → 관리자 승인(출처 있음) 또는 반려. 반려된 정보는 사용자 화면에 안 보여요. 검토 중·검증된 정보는 초안으로 되돌린 뒤 고칠 수 있어요.</p>
+          <p className="text-xs leading-relaxed text-muted">초안 → 검토 요청 → 관리자 승인(출처 있음) 또는 반려. 반려된 정보는 사용자 화면에 안 보여요. 검토 중이거나 출처 있음인 정보는 초안으로 되돌린 뒤 고칠 수 있어요.</p>
           {issues.map((issue) => (
             <Card key={issue.id} className={`p-4 ${issue.status === "REJECTED" ? "opacity-70" : ""}`}>
               <div className="flex items-center gap-2">

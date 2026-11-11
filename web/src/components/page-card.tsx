@@ -3,7 +3,7 @@
 export function PageCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="page-card flex-1 bg-white md:py-12">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-5 pt-7 pb-8 md:rounded-xl md:border md:border-line md:px-10 md:py-12">{children}</div>
+      <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-5 pt-7 pb-8 md:min-h-[520px] md:rounded-xl md:border md:border-line md:px-10 md:py-12">{children}</div>
     </div>
   );
 }

@@ -19,7 +19,7 @@ function fakePrisma() {
         users.set(user.id, user);
         return user;
       }),
-      findUnique: vi.fn(async ({ where }) => users.get(where.id) ?? null),
+      findUnique: vi.fn(async ({ where }) => (where.email ? [...users.values()].find((u) => u.email === where.email) : users.get(where.id)) ?? null),
       delete: vi.fn(async ({ where }) => users.delete(where.id)),
     },
     issueHistory: { count: vi.fn(async () => 0) },
@@ -85,6 +85,15 @@ describe("구글 로그인", () => {
     expect(await auth.verify(token)).toBeNull();
     const admin = await auth.loginForDev("boss@example.com");
     await expect(auth.deleteAccount(admin.user)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("일반 사용자는 회원가입 전에는 로그인이 404이고, 가입하면 로그인된다", async () => {
+    const auth = setup();
+    auth.useGoogleKeysForTest(googleKeys);
+    const token = await googleToken({ email: "stranger@example.com" });
+    await expect(auth.loginWithGoogle(token)).rejects.toBeInstanceOf(NotFoundException);
+    expect((await auth.signupWithGoogle(token)).user.role).toBe("USER");
+    expect((await auth.loginWithGoogle(token)).user.email).toBe("stranger@example.com");
   });
 
   it("위조한 토큰(다른 키로 서명)은 거절", async () => {
