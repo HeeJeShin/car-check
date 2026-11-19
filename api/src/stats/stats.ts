@@ -114,9 +114,11 @@ export class StatsService {
              count(*)::int AS views, count(DISTINCT "visitorHash")::int AS visitors
       FROM "PageView" WHERE "createdAt" >= ${since}
       GROUP BY 1 ORDER BY 1`;
+    // 등록된 세대만 셉니다. 없는 차종 주소(/cars/999999)나 지워진 세대의 기록이 TOP 10을 차지하지 않게.
+    const carIds = (await this.prisma.carModel.findMany({ select: { id: true } })).map((c) => c.id);
     const carsQ = this.prisma.pageView.groupBy({
       by: ["carModelId"],
-      where: { ...where, carModelId: { not: null } },
+      where: { ...where, carModelId: { in: carIds } },
       _count: { _all: true },
       orderBy: { _count: { carModelId: "desc" } },
       take: 10,

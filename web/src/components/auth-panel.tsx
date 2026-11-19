@@ -4,6 +4,7 @@
 // 그걸 API에 보내 우리 로그인 토큰으로 바꿉니다. 비밀번호는 우리 서비스가 전혀 다루지 않습니다.
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useGoogleClientId } from "@/components/google-client-id";
 import { ErrorText, Loading } from "@/components/ui";
 import { ApiError, api, saveLoginToken, type AuthConfig, type AuthUser } from "@/lib/api";
 
@@ -58,14 +59,18 @@ function GoogleButton({ clientId, text, onCredential, onError }: { clientId: str
 const switchLink = "font-bold text-ink underline";
 
 export function AuthPanel({ onLogin, allowSignup = true }: { onLogin: (user: AuthUser) => void; allowSignup?: boolean }) {
-  const [config, setConfig] = useState<AuthConfig | null>(null);
+  // 서버가 미리 받아 둔 값이 있으면 바로 버튼을 그리고, 없을 때만 브라우저가 API에서 받습니다.
+  const preset = useGoogleClientId();
+  const [config, setConfig] = useState<AuthConfig | null>(preset === undefined ? null : { googleClientId: preset });
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
+    if (preset !== undefined) return;
     api<AuthConfig>("/auth/config").then(setConfig, (err: Error) => setError(err.message));
-  }, []);
+  }, [preset]);
 
   // 우리 로그인 토큰을 받으면 저장하고 원래 하던 일로
   const finish = (r: LoginResult) => {
@@ -75,15 +80,21 @@ export function AuthPanel({ onLogin, allowSignup = true }: { onLogin: (user: Aut
 
   function login(credential: string) {
     setError(null);
-    api<LoginResult>("/auth/google", { method: "POST", json: { credential } }).then(finish, (err: Error) => {
-      setError(err.message);
-      if (allowSignup && err instanceof ApiError && err.status === 404) setMode("signup");
-    });
+    setPending(true);
+    api<LoginResult>("/auth/google", { method: "POST", json: { credential } })
+      .then(finish, (err: Error) => {
+        setError(err.message);
+        if (allowSignup && err instanceof ApiError && err.status === 404) setMode("signup");
+      })
+      .finally(() => setPending(false));
   }
 
   function signup(credential: string) {
     setError(null);
-    api<LoginResult>("/auth/google/signup", { method: "POST", json: { credential, agreed } }).then(finish, (err: Error) => setError(err.message));
+    setPending(true);
+    api<LoginResult>("/auth/google/signup", { method: "POST", json: { credential, agreed } })
+      .then(finish, (err: Error) => setError(err.message))
+      .finally(() => setPending(false));
   }
 
   function switchMode(next: "login" | "signup") {
@@ -96,6 +107,7 @@ export function AuthPanel({ onLogin, allowSignup = true }: { onLogin: (user: Aut
   return (
     <div className="flex flex-col gap-4">
       <ErrorText message={error} />
+      {pending && <p className="text-center text-sm text-muted">로그인하는 중이에요… 처음에는 30초쯤 걸릴 수 있어요.</p>}
       {config && !clientId && <p className="rounded-xl bg-chip p-3 text-sm text-body">지금은 구글 로그인을 쓸 수 없어요. 잠시 후 다시 시도해 주세요.</p>}
       {clientId && mode === "login" && <GoogleButton key="login" clientId={clientId} text="signin_with" onCredential={login} onError={setError} />}
       {clientId && mode === "signup" && (
