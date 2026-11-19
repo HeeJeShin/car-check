@@ -44,7 +44,7 @@ export default defineConfig({
         AUTH_JWT_SECRET: "e2e-secret",
         ADMIN_EMAILS: ADMIN,
         EDITOR_EMAILS: EDITOR,
-        GOOGLE_CLIENT_ID: "",
+        GOOGLE_CLIENT_ID: "e2e-client", // 화면이 구글 버튼을 그리게. 실제 구글 검증은 tests/google-login.ts의 대역이 대신함
       },
       timeout: 120_000,
       reuseExistingServer: false, // 항상 새 데이터로
